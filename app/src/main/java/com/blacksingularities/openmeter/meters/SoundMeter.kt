@@ -197,7 +197,7 @@ fun SoundMeter(onBack: () -> Unit) {
                         ((10 * log10(s.coerceAtLeast(1e-14)) + 100) / 90).toFloat().coerceIn(0f, 1f)
                     }
                     val pk = peakBin(mags, 3, FFT_N / 2 - 2)
-                    val pkDb = mags[pk.toInt().coerceIn(0, mags.size - 1)].db()
+                    val pkDb = mags[Math.round(pk).toInt().coerceIn(0, mags.size - 1)].db()
                     val freq = if (pkDb > -75) pk * binHz else 0.0
 
                     withContext(Dispatchers.Main) {

@@ -255,7 +255,7 @@ fun VibrationMeter(onBack: () -> Unit) {
             val sr = acc[4]
             val binHz = sr / VIB_N
             val pk = peakBin(mags, 2, VIB_N / 2 - 2)
-            domHz = if (mags[pk.toInt()] > 0.02) (pk * binHz).toFloat() else Float.NaN
+            domHz = if (mags[Math.round(pk).toInt().coerceIn(0, mags.size - 1)] > 0.02) (pk * binHz).toFloat() else Float.NaN
             // Pasma po 1 Hz od 1 do 30 Hz.
             for (b in 0 until VIB_BANDS) {
                 val k0 = ((b + 1) / binHz).toInt().coerceIn(1, VIB_N / 2 - 1)

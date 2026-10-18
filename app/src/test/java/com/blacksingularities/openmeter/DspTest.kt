@@ -24,7 +24,7 @@ class DspTest {
         fft.magnitudes(x, mag)
         val pk = peakBin(mag)
         assertEquals(f, pk * sr / n, 3.0)
-        assertEquals(0.5, mag[pk.toInt()], 0.1)
+        assertEquals(0.5, mag[Math.round(pk).toInt()], 0.1)
     }
 
     @Test
