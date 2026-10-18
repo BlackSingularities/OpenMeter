@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="app/src/main/res/drawable-nodpi/openmeter_mark.png" width="144" alt="OpenMeter" />
+</p>
+
 # OpenMeter
 
 Mierniki i czujniki telefonu w jednym miejscu – czarny interfejs AMOLED, bez reklam, open source.

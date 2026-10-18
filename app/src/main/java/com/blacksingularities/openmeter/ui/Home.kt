@@ -1,6 +1,7 @@
 package com.blacksingularities.openmeter.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -43,10 +44,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.blacksingularities.openmeter.R
 import com.blacksingularities.openmeter.core.Recorder
 import com.blacksingularities.openmeter.meters.Meter
 import com.blacksingularities.openmeter.update.UpdateManager
@@ -69,6 +72,12 @@ fun HomeScreen(onOpen: (String) -> Unit) {
     ) {
         item(span = { GridItemSpan(2) }) {
             Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Image(
+                    painter = painterResource(R.drawable.openmeter_mark),
+                    contentDescription = null,
+                    modifier = Modifier.size(52.dp),
+                )
+                Spacer(Modifier.width(10.dp))
                 Column(Modifier.weight(1f)) {
                     Text("OpenMeter", color = Color.White, fontSize = 32.sp, fontWeight = FontWeight.Bold)
                     Text(
