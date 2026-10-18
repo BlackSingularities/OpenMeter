@@ -1,5 +1,6 @@
 package com.blacksingularities.openmeter.ui
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Delete
@@ -25,10 +27,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.blacksingularities.openmeter.R
 import com.blacksingularities.openmeter.core.Prefs
 import com.blacksingularities.openmeter.core.Recorder
 import com.blacksingularities.openmeter.update.UpdateManager
@@ -85,13 +89,23 @@ fun SettingsScreen(onBack: () -> Unit) {
                 Pill("Sprawdź", active = true) { UpdateManager.check(context, manual = true) }
             }
         }
-        Text(
-            "OpenMeter · open source (MIT)\ngithub.com/BlackSingularities/OpenMeter",
-            color = Palette.TextFaint,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
-            modifier = Modifier.padding(8.dp),
-        )
+        Row(
+            Modifier.fillMaxWidth().padding(8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Image(
+                painter = painterResource(R.drawable.openmeter_mark),
+                contentDescription = null,
+                modifier = Modifier.size(42.dp),
+            )
+            Spacer(Modifier.width(10.dp))
+            Text(
+                "OpenMeter · open source (MIT)\ngithub.com/BlackSingularities/OpenMeter",
+                color = Palette.TextFaint,
+                fontSize = 12.sp,
+                lineHeight = 16.sp,
+            )
+        }
     }
 }
 
