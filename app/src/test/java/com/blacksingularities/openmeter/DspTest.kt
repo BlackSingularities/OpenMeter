@@ -43,6 +43,6 @@ class DspTest {
     fun versions() {
         assertTrue(isNewer("1.0.12", "1.0.9"))
         assertFalse(isNewer("1.0.0", "1.0.0"))
-        assertFalse(isNewer("1.0.0", "1.0-dev").not() && false)
+        assertFalse(isNewer("0.9", "1.0.0"))
     }
 }
