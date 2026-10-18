@@ -2,10 +2,7 @@ package com.blacksingularities.openmeter.core
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
 
 /** Ustawienia aplikacji – trwałe, a jednocześnie obserwowalne przez Compose. */
 object Prefs {
@@ -14,37 +11,70 @@ object Prefs {
     fun init(context: Context) {
         if (::sp.isInitialized) return
         sp = context.getSharedPreferences("openmeter", Context.MODE_PRIVATE)
-        soundOffset = sp.getFloat("soundOffset", 0f)
-        aWeighting = sp.getBoolean("aWeighting", true)
-        keepScreenOn = sp.getBoolean("keepScreenOn", true)
-        haptics = sp.getBoolean("haptics", true)
-        detectorSound = sp.getBoolean("detectorSound", true)
-        seaLevelHpa = sp.getFloat("seaLevelHpa", 1013.25f)
-        autoUpdate = sp.getBoolean("autoUpdate", true)
+        soundOffsetState.value = sp.getFloat("soundOffset", 0f)
+        aWeightingState.value = sp.getBoolean("aWeighting", true)
+        keepScreenOnState.value = sp.getBoolean("keepScreenOn", true)
+        hapticsState.value = sp.getBoolean("haptics", true)
+        detectorSoundState.value = sp.getBoolean("detectorSound", true)
+        seaLevelHpaState.value = sp.getFloat("seaLevelHpa", 1013.25f)
+        autoUpdateState.value = sp.getBoolean("autoUpdate", true)
     }
 
-    var soundOffset by mutableFloatStateOf(0f)
-        private set
-    var aWeighting by mutableStateOf(true)
-        private set
-    var keepScreenOn by mutableStateOf(true)
-        private set
-    var haptics by mutableStateOf(true)
-        private set
-    var detectorSound by mutableStateOf(true)
-        private set
-    var seaLevelHpa by mutableFloatStateOf(1013.25f)
-        private set
-    var autoUpdate by mutableStateOf(true)
-        private set
+    private val soundOffsetState = mutableStateOf(0f)
+    var soundOffset: Float
+        get() = soundOffsetState.value
+        set(v) {
+            soundOffsetState.value = v
+            sp.edit().putFloat("soundOffset", v).apply()
+        }
 
-    fun setSoundOffset(v: Float) { soundOffset = v; sp.edit().putFloat("soundOffset", v).apply() }
-    fun setAWeighting(v: Boolean) { aWeighting = v; sp.edit().putBoolean("aWeighting", v).apply() }
-    fun setKeepScreenOn(v: Boolean) { keepScreenOn = v; sp.edit().putBoolean("keepScreenOn", v).apply() }
-    fun setHaptics(v: Boolean) { haptics = v; sp.edit().putBoolean("haptics", v).apply() }
-    fun setDetectorSound(v: Boolean) { detectorSound = v; sp.edit().putBoolean("detectorSound", v).apply() }
-    fun setSeaLevelHpa(v: Float) { seaLevelHpa = v; sp.edit().putFloat("seaLevelHpa", v).apply() }
-    fun setAutoUpdate(v: Boolean) { autoUpdate = v; sp.edit().putBoolean("autoUpdate", v).apply() }
+    private val aWeightingState = mutableStateOf(true)
+    var aWeighting: Boolean
+        get() = aWeightingState.value
+        set(v) {
+            aWeightingState.value = v
+            sp.edit().putBoolean("aWeighting", v).apply()
+        }
+
+    private val keepScreenOnState = mutableStateOf(true)
+    var keepScreenOn: Boolean
+        get() = keepScreenOnState.value
+        set(v) {
+            keepScreenOnState.value = v
+            sp.edit().putBoolean("keepScreenOn", v).apply()
+        }
+
+    private val hapticsState = mutableStateOf(true)
+    var haptics: Boolean
+        get() = hapticsState.value
+        set(v) {
+            hapticsState.value = v
+            sp.edit().putBoolean("haptics", v).apply()
+        }
+
+    private val detectorSoundState = mutableStateOf(true)
+    var detectorSound: Boolean
+        get() = detectorSoundState.value
+        set(v) {
+            detectorSoundState.value = v
+            sp.edit().putBoolean("detectorSound", v).apply()
+        }
+
+    private val seaLevelHpaState = mutableStateOf(1013.25f)
+    var seaLevelHpa: Float
+        get() = seaLevelHpaState.value
+        set(v) {
+            seaLevelHpaState.value = v
+            sp.edit().putFloat("seaLevelHpa", v).apply()
+        }
+
+    private val autoUpdateState = mutableStateOf(true)
+    var autoUpdate: Boolean
+        get() = autoUpdateState.value
+        set(v) {
+            autoUpdateState.value = v
+            sp.edit().putBoolean("autoUpdate", v).apply()
+        }
 
     /** Historia ciśnienia: pary „czas;hPa” zapisywane co najmniej co minutę (do 48 h). */
     fun pressureHistory(): List<Pair<Long, Float>> =

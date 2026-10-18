@@ -168,8 +168,8 @@ fun Barometer(onBack: () -> Unit) {
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Pill("Zero wysokości", icon = Icons.Rounded.MyLocation, active = !zeroAlt.isNaN()) { zeroAlt = if (zeroAlt.isNaN()) alt else Float.NaN }
                 Spacer(Modifier.weight(1f))
-                RoundIcon(Icons.Rounded.Remove, "Ciśnienie odniesienia −") { Prefs.setSeaLevelHpa(Prefs.seaLevelHpa - 1f) }
-                RoundIcon(Icons.Rounded.Add, "Ciśnienie odniesienia +") { Prefs.setSeaLevelHpa(Prefs.seaLevelHpa + 1f) }
+                RoundIcon(Icons.Rounded.Remove, "Ciśnienie odniesienia −") { Prefs.seaLevelHpa = (Prefs.seaLevelHpa - 1f) }
+                RoundIcon(Icons.Rounded.Add, "Ciśnienie odniesienia +") { Prefs.seaLevelHpa = (Prefs.seaLevelHpa + 1f) }
             }
             Text(
                 "Ciśnienie odniesienia (QNH) z najbliższej stacji meteo poprawia wysokość bezwzględną.",

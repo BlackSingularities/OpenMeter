@@ -43,17 +43,17 @@ fun SettingsScreen(onBack: () -> Unit) {
     MeterScaffold("settings", "Ustawienia", onBack) {
         Panel {
             SectionLabel("Ogólne")
-            Toggle("Nie wygaszaj ekranu podczas pomiaru", Prefs.keepScreenOn, Prefs::setKeepScreenOn)
-            Toggle("Wibracje przy dotyku", Prefs.haptics, Prefs::setHaptics)
-            Toggle("Dźwięk wykrywacza metalu", Prefs.detectorSound, Prefs::setDetectorSound)
+            Toggle("Nie wygaszaj ekranu podczas pomiaru", Prefs.keepScreenOn, { Prefs.keepScreenOn = it })
+            Toggle("Wibracje przy dotyku", Prefs.haptics, { Prefs.haptics = it })
+            Toggle("Dźwięk wykrywacza metalu", Prefs.detectorSound, { Prefs.detectorSound = it })
         }
         Panel {
             SectionLabel("Decybelomierz")
-            Toggle("Korekcja A – dB(A)", Prefs.aWeighting, Prefs::setAWeighting)
+            Toggle("Korekcja A – dB(A)", Prefs.aWeighting, { Prefs.aWeighting = it })
             Text("Kalibracja: ${if (Prefs.soundOffset >= 0) "+" else ""}${fmt(Prefs.soundOffset, 1)} dB", color = Color.White, fontSize = 14.sp, modifier = Modifier.padding(top = 8.dp))
             Slider(
                 value = Prefs.soundOffset,
-                onValueChange = { Prefs.setSoundOffset((it * 2).toInt() / 2f) },
+                onValueChange = { Prefs.soundOffset = ((it * 2).toInt() / 2f) },
                 valueRange = -20f..20f,
                 colors = sliderColors(),
             )
@@ -66,7 +66,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
         Panel {
             SectionLabel("Aktualizacje")
-            Toggle("Sprawdzaj przy uruchomieniu", Prefs.autoUpdate, Prefs::setAutoUpdate)
+            Toggle("Sprawdzaj przy uruchomieniu", Prefs.autoUpdate, { Prefs.autoUpdate = it })
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Wersja ${UpdateManager.currentVersion}", color = Color.White, fontSize = 14.sp)

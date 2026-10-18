@@ -115,7 +115,7 @@ fun MetalDetector(onBack: () -> Unit) {
             com.blacksingularities.openmeter.ui.RoundIcon(
                 if (Prefs.detectorSound) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff,
                 "Dźwięk",
-            ) { Prefs.setDetectorSound(!Prefs.detectorSound) }
+            ) { Prefs.detectorSound = (!Prefs.detectorSound) }
         },
     ) {
         if (accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
