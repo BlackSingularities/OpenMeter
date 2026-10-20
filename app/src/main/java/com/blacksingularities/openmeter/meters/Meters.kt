@@ -20,9 +20,21 @@ import androidx.compose.material.icons.rounded.Train
 import androidx.compose.material.icons.rounded.Waves
 import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import com.blacksingularities.openmeter.core.hasMicrophone
 import com.blacksingularities.openmeter.core.hasSensor
+import com.blacksingularities.openmeter.ui.Palette
+
+/** Grupy mierników z własnym kolorem akcentu. */
+enum class Category(val label: String, val color: Color) {
+    Acoustics("Dźwięk i światło", Palette.Amber),
+    Position("Położenie", Palette.Cyan),
+    Magnetism("Magnetyzm", Palette.Rose),
+    Motion("Ruch", Palette.Mint),
+    Environment("Otoczenie", Palette.Sky),
+    Device("Urządzenie", Palette.Violet),
+}
 
 /** Wszystkie mierniki. Na ekranie głównym widać tylko te, dla których telefon ma czujnik. */
 enum class Meter(
@@ -30,22 +42,23 @@ enum class Meter(
     val title: String,
     val subtitle: String,
     val icon: ImageVector,
+    val category: Category,
 ) {
-    Sound("sound", "Decybelomierz", "Poziom dźwięku, widmo, stroik", Icons.Rounded.GraphicEq),
-    Light("light", "Luksomierz", "Natężenie światła i ekspozycja", Icons.Rounded.WbSunny),
-    Level("level", "Poziomica", "Libella 2D i pozioma", Icons.Rounded.Straighten),
-    Protractor("protractor", "Kątomierz", "Kąt krawędzi i nachylenie", Icons.Rounded.Architecture),
-    Metal("metal", "Wykrywacz metalu", "Pole magnetyczne w µT", Icons.Rounded.Sensors),
-    Compass("compass", "Kompas", "Azymut i pole magnetyczne", Icons.Rounded.Explore),
-    Seismo("seismo", "Sejsmograf", "Drgania podłoża z akcelerometru", Icons.Rounded.Waves),
-    Baro("baro", "Barometr", "Ciśnienie, wysokość, trend", Icons.Rounded.Speed),
-    Vibration("vibration", "Drgania w podróży", "Komfort jazdy autem i pociągiem", Icons.Rounded.Train),
-    Climate("climate", "Klimat", "Temperatura, wilgotność, punkt rosy", Icons.Rounded.Thermostat),
-    Tacho("tacho", "Obrotomierz", "Prędkość obrotu z żyroskopu", Icons.Rounded.Autorenew),
-    Steps("steps", "Krokomierz", "Kroki i kadencja", Icons.AutoMirrored.Rounded.DirectionsWalk),
-    Proximity("proximity", "Zbliżenie", "Czujnik zbliżeniowy i licznik gestów", Icons.Rounded.PanTool),
-    Hinge("hinge", "Kąt zawiasu", "Rozłożenie składanego telefonu", Icons.AutoMirrored.Rounded.MenuBook),
-    Inspector("inspector", "Wszystkie czujniki", "Lista i odczyty na żywo", Icons.Rounded.Memory),
+    Sound("sound", "Decybelomierz", "Poziom dźwięku, widmo, stroik", Icons.Rounded.GraphicEq, Category.Acoustics),
+    Light("light", "Luksomierz", "Natężenie światła i ekspozycja", Icons.Rounded.WbSunny, Category.Acoustics),
+    Level("level", "Poziomica", "Libella 2D i pozioma", Icons.Rounded.Straighten, Category.Position),
+    Protractor("protractor", "Kątomierz", "Kąt krawędzi i nachylenie", Icons.Rounded.Architecture, Category.Position),
+    Metal("metal", "Wykrywacz metalu", "Pole magnetyczne w µT", Icons.Rounded.Sensors, Category.Magnetism),
+    Compass("compass", "Kompas", "Azymut i pole magnetyczne", Icons.Rounded.Explore, Category.Magnetism),
+    Seismo("seismo", "Sejsmograf", "Drgania podłoża z akcelerometru", Icons.Rounded.Waves, Category.Motion),
+    Baro("baro", "Barometr", "Ciśnienie, wysokość, trend", Icons.Rounded.Speed, Category.Environment),
+    Vibration("vibration", "Drgania w podróży", "Komfort jazdy autem i pociągiem", Icons.Rounded.Train, Category.Motion),
+    Climate("climate", "Klimat", "Temperatura, wilgotność, punkt rosy", Icons.Rounded.Thermostat, Category.Environment),
+    Tacho("tacho", "Obrotomierz", "Prędkość obrotu z żyroskopu", Icons.Rounded.Autorenew, Category.Motion),
+    Steps("steps", "Krokomierz", "Kroki i kadencja", Icons.AutoMirrored.Rounded.DirectionsWalk, Category.Motion),
+    Proximity("proximity", "Zbliżenie", "Czujnik zbliżeniowy i licznik gestów", Icons.Rounded.PanTool, Category.Device),
+    Hinge("hinge", "Kąt zawiasu", "Rozłożenie składanego telefonu", Icons.AutoMirrored.Rounded.MenuBook, Category.Device),
+    Inspector("inspector", "Wszystkie czujniki", "Lista i odczyty na żywo", Icons.Rounded.Memory, Category.Device),
     ;
 
     fun isAvailable(c: Context): Boolean = when (this) {
@@ -63,6 +76,8 @@ enum class Meter(
         Hinge -> Build.VERSION.SDK_INT >= 30 && c.hasSensor(Sensor.TYPE_HINGE_ANGLE)
         Inspector -> true
     }
+
+    val accent: Color get() = category.color
 
     companion object {
         fun byId(id: String) = entries.firstOrNull { it.id == id }

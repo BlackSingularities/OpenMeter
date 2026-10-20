@@ -1,5 +1,18 @@
 # Zmiany
 
+## 1.1.0
+
+Odświeżony wygląd i wygodniejsza obsługa:
+
+- Kolory kategorii: każdy miernik ma własny akcent (dźwięk i światło, położenie, magnetyzm, ruch, otoczenie, urządzenie)
+- Ekran główny: wyszukiwarka (także bez polskich znaków), filtry kategorii, ulubione i ostatnio używane
+- Przytrzymanie kafelka lub gwiazdka dodaje miernik do ulubionych – trafiają na początek listy
+- Układ siatki lub listy do wyboru
+- Nowy nagłówek miernika z ikoną i kategorią, poświata w kolorze akcentu, gradientowe wykresy i skale
+- Nagrania: podsumowanie, podgląd wykresu każdej kolumny CSV ze statystykami (min/średnia/max), potwierdzenie usuwania, usuwanie wszystkich
+- Ustawienia z opisami, resetem kalibracji i czyszczeniem ulubionych
+- Płynniejsze przejścia między ekranami
+
 ## 1.0.0
 
 Pierwsze wydanie OpenMeter – mierniki i czujniki w jednym miejscu:

@@ -50,7 +50,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -72,6 +75,7 @@ import com.blacksingularities.openmeter.core.Prefs
 import com.blacksingularities.openmeter.core.Recorder
 import com.blacksingularities.openmeter.core.Ring
 import com.blacksingularities.openmeter.core.Ticker
+import com.blacksingularities.openmeter.meters.Meter
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
@@ -101,43 +105,70 @@ fun MeterScaffold(
             }
         }
     }
-    Column(
-        Modifier
-            .fillMaxSize()
-            .background(Palette.Ink)
-            .windowInsetsPadding(WindowInsets.statusBars),
-    ) {
-        Row(
-            Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            RoundIcon(Icons.AutoMirrored.Rounded.ArrowBack, "Wstecz", onClick = onBack)
-            Spacer(Modifier.width(12.dp))
-            Text(
-                title,
-                color = Palette.Text,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.SemiBold,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f),
-            )
-            actions()
-            if (recordColumns != null) {
-                Spacer(Modifier.width(8.dp))
-                RecordButton(id, title, recordColumns, recordInterval)
-            }
-        }
+    val meter = Meter.byId(id)
+    val accent = meter?.accent ?: Color.White
+    CompositionLocalProvider(LocalAccent provides accent) {
         Column(
             Modifier
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-                .windowInsetsPadding(WindowInsets.navigationBars)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            content = content,
-        )
+                .background(Palette.Ink)
+                .drawBehind {
+                    // Delikatna poświata w kolorze kategorii za nagłówkiem.
+                    drawRect(
+                        Brush.radialGradient(
+                            listOf(accent.copy(alpha = 0.16f), Color.Transparent),
+                            center = Offset(size.width * 0.15f, 0f),
+                            radius = size.width * 0.9f,
+                        ),
+                    )
+                }
+                .windowInsetsPadding(WindowInsets.statusBars),
+        ) {
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                RoundIcon(Icons.AutoMirrored.Rounded.ArrowBack, "Wstecz", onClick = onBack)
+                Spacer(Modifier.width(12.dp))
+                if (meter != null) {
+                    Box(
+                        Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.16f)),
+                        contentAlignment = Alignment.Center,
+                    ) {
+                        Icon(meter.icon, null, tint = accent, modifier = Modifier.size(19.dp))
+                    }
+                    Spacer(Modifier.width(10.dp))
+                }
+                Column(Modifier.weight(1f)) {
+                    Text(
+                        title,
+                        color = Palette.Text,
+                        fontSize = 19.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                    )
+                    if (meter != null) {
+                        Text(meter.category.label, color = accent.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
+                    }
+                }
+                actions()
+                if (recordColumns != null) {
+                    Spacer(Modifier.width(8.dp))
+                    RecordButton(id, title, recordColumns, recordInterval)
+                }
+            }
+            Column(
+                Modifier
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .windowInsetsPadding(WindowInsets.navigationBars)
+                    .padding(bottom = 24.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                content = content,
+            )
+        }
     }
 }
 
@@ -200,7 +231,7 @@ private fun RecordButton(id: String, title: String, columns: List<String>, inter
 @Composable
 fun RoundIcon(icon: ImageVector, description: String?, active: Boolean = false, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
-    val bg by animateColorAsState(if (active) Color.White else Palette.CardHigh, tween(160), label = "ri")
+    val bg by animateColorAsState(if (active) LocalAccent.current else Palette.CardHigh, tween(160), label = "ri")
     Box(
         Modifier
             .size(44.dp)
@@ -288,13 +319,14 @@ fun StatGrid(items: List<Pair<String, String>>, columns: Int = 3) {
 @Composable
 fun Segmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
     val haptic = LocalHapticFeedback.current
+    val accent = LocalAccent.current
     Row(
         modifier.clip(PillShape).background(Palette.CardHigh).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEachIndexed { i, label ->
             val active = i == selected
-            val bg by animateColorAsState(if (active) Color.White else Color.Transparent, tween(160), label = "seg")
+            val bg by animateColorAsState(if (active) accent else Color.Transparent, tween(160), label = "seg")
             Box(
                 Modifier
                     .weight(1f)
@@ -317,7 +349,7 @@ fun Segmented(options: List<String>, selected: Int, modifier: Modifier = Modifie
 @Composable
 fun Pill(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, active: Boolean = false, onClick: () -> Unit) {
     val haptic = LocalHapticFeedback.current
-    val bg by animateColorAsState(if (active) Color.White else Palette.CardHigh, tween(160), label = "pill")
+    val bg by animateColorAsState(if (active) LocalAccent.current else Palette.CardHigh, tween(160), label = "pill")
     Row(
         modifier
             .clip(PillShape)
@@ -411,7 +443,7 @@ fun LineChart(
                             lineTo(x0, h)
                             close()
                         }
-                        drawPath(area, s.color.copy(alpha = 0.12f))
+                        drawPath(area, Brush.verticalGradient(listOf(s.color.copy(alpha = 0.30f), s.color.copy(alpha = 0f))))
                     }
                     drawPath(path, s.color, style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round))
                 }
@@ -452,6 +484,7 @@ fun ArcGauge(
             val arcSize = Size(d, d)
             drawArc(Palette.CardHigh, 150f, 240f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             if (f > 0.001f) {
+                drawArc(color.copy(alpha = 0.16f), 150f, 240f * f, false, topLeft, arcSize, style = Stroke(stroke * 2.2f, cap = StrokeCap.Round))
                 drawArc(color, 150f, 240f * f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             }
             val c = Offset(topLeft.x + d / 2, topLeft.y + d / 2)
