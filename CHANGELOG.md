@@ -13,6 +13,11 @@ Odświeżony wygląd i wygodniejsza obsługa:
 - Ustawienia z opisami, resetem kalibracji i czyszczeniem ulubionych
 - Płynniejsze przejścia między ekranami
 
+## 1.0.1 — Transparent application icon
+
+- Use the transparent application mark in launcher, splash and existing branding surfaces.
+- Preserve alpha in legacy and adaptive Android icons; refresh themed icon resources.
+
 ## 1.0.0
 
 Pierwsze wydanie OpenMeter – mierniki i czujniki w jednym miejscu:
