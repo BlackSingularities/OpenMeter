@@ -11,6 +11,9 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -49,12 +52,19 @@ class MainActivity : ComponentActivity() {
                     if (keepOn) window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                     else window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
                 }
+                LaunchedEffect(screen) { if (meter != null) Prefs.pushRecent(meter.id) }
                 BackHandler(enabled = screen != "home") { screen = "home" }
                 Box(Modifier.fillMaxSize().background(Palette.Ink)) {
                     AnimatedContent(
                         targetState = screen,
                         transitionSpec = {
-                            (fadeIn(tween(180)) + scaleIn(tween(220), initialScale = 0.96f)) togetherWith fadeOut(tween(120))
+                            if (targetState == "home") {
+                                (fadeIn(tween(220)) + scaleIn(tween(260), initialScale = 0.97f)) togetherWith
+                                    (fadeOut(tween(160)) + slideOutHorizontally(tween(220)) { it / 6 })
+                            } else {
+                                (fadeIn(tween(220)) + slideInHorizontally(tween(260)) { it / 5 }) togetherWith
+                                    (fadeOut(tween(140)) + scaleOut(tween(220), targetScale = 0.97f))
+                            }
                         },
                         label = "nav",
                     ) { s ->
