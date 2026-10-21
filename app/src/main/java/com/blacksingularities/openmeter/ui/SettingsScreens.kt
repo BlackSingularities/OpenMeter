@@ -181,6 +181,22 @@ fun SettingsScreen(onBack: () -> Unit) {
             )
             Icon(Icons.AutoMirrored.Rounded.OpenInNew, "Otwórz", tint = Palette.TextFaint, modifier = Modifier.size(18.dp))
         }
+        Row(
+            Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                "Projekt i wykonanie: redzikowski.com",
+                color = Palette.TextFaint,
+                fontSize = 12.sp,
+                modifier = Modifier
+                    .weight(1f)
+                    .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://redzikowski.com"))) } },
+            )
+            Pill("☕ Postaw kawę", active = true) {
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://buycoffee.to/adamredzikowski"))) }
+            }
+        }
     }
     if (confirmReset) {
         ConfirmDialog(
