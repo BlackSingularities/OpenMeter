@@ -35,7 +35,7 @@ Aplikacja sama sprawdza nowe wydania i instaluje je jednym dotknięciem.
 
 ## Budowanie
 
-Każdy commit na `main` buduje podpisany APK w GitHub Actions i publikuje wydanie.
+Każdy wypchnięty tag `vX.Y.Z` buduje podpisany APK w GitHub Actions i publikuje wydanie.
 Wersja pochodzi z pliku `VERSION`, opis wydania z `CHANGELOG.md`.
 
 ```bash

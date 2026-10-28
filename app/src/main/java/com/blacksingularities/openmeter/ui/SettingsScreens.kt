@@ -22,7 +22,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.OpenInNew
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.DeleteSweep
 import androidx.compose.material.icons.rounded.ExpandLess
@@ -157,12 +156,6 @@ fun SettingsScreen(onBack: () -> Unit) {
         Row(
             Modifier
                 .fillMaxWidth()
-                .clip(CardShape)
-                .clickable {
-                    runCatching {
-                        context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://github.com/BlackSingularities/OpenMeter")))
-                    }
-                }
                 .padding(8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -173,20 +166,19 @@ fun SettingsScreen(onBack: () -> Unit) {
             )
             Spacer(Modifier.width(10.dp))
             Text(
-                "OpenMeter · open source (MIT)\ngithub.com/BlackSingularities/OpenMeter",
+                "OpenMeter · open source (MIT)\nDarmowa, bez reklam",
                 color = Palette.TextFaint,
                 fontSize = 12.sp,
                 lineHeight = 16.sp,
                 modifier = Modifier.weight(1f),
             )
-            Icon(Icons.AutoMirrored.Rounded.OpenInNew, "Otwórz", tint = Palette.TextFaint, modifier = Modifier.size(18.dp))
         }
         Row(
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                "Projekt i wykonanie: redzikowski.com",
+                "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com",
                 color = Palette.TextFaint,
                 fontSize = 12.sp,
                 modifier = Modifier
