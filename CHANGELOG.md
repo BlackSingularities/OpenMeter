@@ -1,5 +1,11 @@
 # Zmiany
 
+## 1.1.1
+
+- Nowa strona aplikacji z opisem funkcji.
+- Jednolita informacja o autorze (Adam Rędzikowski · redzikowski.com) i przycisk „Postaw kawę”.
+- Usunięte odnośniki do repozytorium z interfejsu.
+
 ## 1.1.0
 
 Odświeżony wygląd i wygodniejsza obsługa:
