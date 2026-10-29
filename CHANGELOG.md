@@ -1,5 +1,9 @@
 # Zmiany
 
+## 1.1.4
+
+- Dopasowane kolorystycznie tła ikon aplikacji i spójne zasoby graficzne.
+
 ## 1.1.1
 
 - Nowa strona aplikacji z opisem funkcji.
