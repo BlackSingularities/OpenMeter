@@ -177,14 +177,23 @@ fun SettingsScreen(onBack: () -> Unit) {
             Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            Text(
-                "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com",
-                color = Palette.TextFaint,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .weight(1f)
-                    .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://redzikowski.com"))) } },
-            )
+            Column(Modifier.weight(1f)) {
+                Text(
+                    "Pomysł i wykonanie: Adam Rędzikowski · redzikowski.com",
+                    color = Palette.TextFaint,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://redzikowski.com"))) } },
+                )
+                Text(
+                    "kontakt@redzikowski.com",
+                    color = Palette.TextFaint,
+                    fontSize = 12.sp,
+                    modifier = Modifier
+                        .padding(top = 2.dp)
+                        .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("mailto:kontakt@redzikowski.com"))) } },
+                )
+            }
             Pill("☕ Postaw kawę", active = true) {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://buycoffee.to/adamredzikowski"))) }
             }
