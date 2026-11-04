@@ -1,5 +1,9 @@
 # Zmiany
 
+## 1.1.5
+
+- Komunikat o nowej wersji bez listy zmian, linków i informacji, skąd pobierana jest aktualizacja.
+
 ## 1.1.4
 
 - Dopasowane kolorystycznie tła ikon aplikacji i spójne zasoby graficzne.

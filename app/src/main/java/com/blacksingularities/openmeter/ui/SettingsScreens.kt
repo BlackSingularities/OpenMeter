@@ -134,7 +134,7 @@ fun SettingsScreen(onBack: () -> Unit) {
         }
         Panel {
             SettingsHeader(Icons.Rounded.SystemUpdate, "Aktualizacje", Palette.Sky)
-            Toggle("Sprawdzaj przy uruchomieniu", "Nowe wersje z GitHub Releases", Prefs.autoUpdate) { Prefs.autoUpdate = it }
+            Toggle("Sprawdzaj przy uruchomieniu", "Nowe wersje aplikacji", Prefs.autoUpdate) { Prefs.autoUpdate = it }
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
                     Text("Wersja ${UpdateManager.currentVersion}", color = Color.White, fontSize = 14.sp)
@@ -144,7 +144,7 @@ fun SettingsScreen(onBack: () -> Unit) {
                             UpdateState.UpToDate -> "Masz najnowszą wersję"
                             is UpdateState.Available -> "Dostępna ${s.info.version}"
                             is UpdateState.Failed -> "Błąd: ${s.message}"
-                            else -> "Wydania z GitHuba"
+                            else -> "Aktualizacje aplikacji"
                         },
                         color = Palette.TextFaint,
                         fontSize = 12.sp,
