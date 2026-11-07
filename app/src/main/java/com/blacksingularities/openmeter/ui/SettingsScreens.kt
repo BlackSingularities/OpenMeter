@@ -193,6 +193,16 @@ fun SettingsScreen(onBack: () -> Unit) {
                         .padding(top = 2.dp)
                         .clickable { runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("mailto:kontakt@redzikowski.com"))) } },
                 )
+                com.blacksingularities.openmeter.feedback.FeedbackEntry { open ->
+                    Text(
+                        com.blacksingularities.openmeter.feedback.FeedbackText.entryTitle,
+                        color = Palette.TextFaint,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .padding(top = 2.dp)
+                            .clickable { open() },
+                    )
+                }
             }
             Pill("☕ Postaw kawę", active = true) {
                 runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://buycoffee.to/adamredzikowski"))) }

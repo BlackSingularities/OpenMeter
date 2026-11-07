@@ -1,5 +1,7 @@
 package com.blacksingularities.openmeter
 
+import com.blacksingularities.openmeter.feedback.Feedback
+import com.blacksingularities.openmeter.feedback.CrashReportPrompt
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.ComponentActivity
@@ -38,6 +40,7 @@ import com.blacksingularities.openmeter.update.UpdateManager
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        Feedback.install(this, "openmeter")
         enableEdgeToEdge()
         WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = false
         Prefs.init(this)
@@ -45,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             OpenMeterTheme {
+                CrashReportPrompt()
                 var screen by rememberSaveable { mutableStateOf("home") }
                 val meter = Meter.byId(screen)
                 val keepOn = Prefs.keepScreenOn && meter != null
