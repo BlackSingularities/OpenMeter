@@ -47,6 +47,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
+import androidx.compose.ui.platform.LocalHapticFeedback
+import com.blacksingularities.openmeter.R
+import com.blacksingularities.openmeter.ui.Tip
+import kotlinx.coroutines.delay
 import com.blacksingularities.openmeter.core.Fft
 import com.blacksingularities.openmeter.core.Prefs
 import com.blacksingularities.openmeter.core.Recorder
@@ -91,13 +97,13 @@ private const val F_HI = 16000.0
 private const val SPL_BASE = 100.0
 
 private fun category(db: Float) = when {
-    db < 30 -> "Szept, cisza nocna"
-    db < 45 -> "Cicho"
-    db < 60 -> "Spokojna rozmowa"
-    db < 75 -> "Ruch uliczny, głośna rozmowa"
-    db < 85 -> "Głośno"
-    db < 100 -> "Szkodliwe przy długim narażeniu"
-    else -> "Bardzo głośno – chroń słuch"
+    db < 30 -> R.string.snd_c1
+    db < 45 -> R.string.snd_c2
+    db < 60 -> R.string.snd_c3
+    db < 75 -> R.string.snd_c4
+    db < 85 -> R.string.snd_c5
+    db < 100 -> R.string.snd_c6
+    else -> R.string.snd_c7
 }
 
 @SuppressLint("MissingPermission")
@@ -222,51 +228,64 @@ fun SoundMeter(onBack: () -> Unit) {
         }
     }
 
+    // Alarm hałasu: wibracja co 2 s, dopóki poziom przekracza próg.
+    val haptic = LocalHapticFeedback.current
+    val alarm = Prefs.noiseAlarm
+    val over = alarm > 0f && !level.isNaN() && level >= alarm
+    LaunchedEffect(over) {
+        while (over) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            delay(2000)
+        }
+    }
+
     MeterScaffold(
         Meter.Sound.id,
-        Meter.Sound.title,
+        stringResource(Meter.Sound.title),
         onBack,
         recordColumns = listOf("level_db", "leq_db", "peak_hz"),
         recordInterval = 0,
     ) {
         if (!granted) {
-            Notice("Decybelomierz potrzebuje dostępu do mikrofonu. Dźwięk jest analizowany na bieżąco i nigdzie nie jest zapisywany.", "Zezwól") {
+            Notice(stringResource(R.string.snd_perm), stringResource(R.string.allow)) {
                 launcher.launch(Manifest.permission.RECORD_AUDIO)
             }
             return@MeterScaffold
         }
         Panel {
             val frac = if (level.isNaN()) 0f else ((level - 20f) / 100f)
-            ArcGauge(frac, levelColor(frac)) {
-                Readout(fmt(level, 1), weighting, if (level.isNaN()) "Nasłuchiwanie…" else category(level))
+            ArcGauge(frac, if (over) Palette.Danger else levelColor(frac)) {
+                Readout(fmt(level, 1), weighting, if (level.isNaN()) stringResource(R.string.snd_listening) else stringResource(category(level)), color = if (over) Palette.Danger else Palette.Text)
             }
             StatGrid(
                 listOf(
-                    "Min" to fmt(stats.min, 1),
+                    stringResource(R.string.min) to fmt(stats.min, 1),
                     "Leq" to fmt(leq, 1),
-                    "Maks" to fmt(stats.max, 1),
+                    stringResource(R.string.max) to fmt(stats.max, 1),
                 ),
             )
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Pill(if (paused) "Wznów" else "Pauza", icon = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause) { paused = !paused }
-                Pill("Zeruj", icon = Icons.Rounded.RestartAlt) {
+                Pill(stringResource(if (paused) R.string.resume else R.string.pause), icon = if (paused) Icons.Rounded.PlayArrow else Icons.Rounded.Pause) { paused = !paused }
+                Pill(stringResource(R.string.reset), icon = Icons.Rounded.RestartAlt) {
                     stats.reset(); energy[0] = 0.0; energy[1] = 0.0; history.clear(); leq = Float.NaN; ticker.tick()
                 }
-                Segmented(listOf("Szybko", "Wolno"), slow, Modifier.weight(1f)) { slow = it }
+                Segmented(listOf(stringResource(R.string.snd_fast), stringResource(R.string.snd_slow)), slow, Modifier.weight(1f)) { slow = it }
             }
         }
         Panel {
-            SectionLabel("Historia · ostatnie 30 s")
-            LineChart(listOf(Series(history, Color.White)), ticker, fill = true, minSpan = 20f, yLabel = { fmt(it, 0) })
+            SectionLabel(stringResource(R.string.snd_history))
+            LineChart(listOf(Series(history, Palette.Fg)), ticker, fill = true, minSpan = 20f, yLabel = { fmt(it, 0) })
         }
         Panel {
-            SectionLabel("Widmo")
-            Bars(bands, ticker, colorOf = { v -> lerp(Color(0xFF3A3A3A), Color.White, v) })
+            SectionLabel(stringResource(R.string.snd_spectrum))
+            val lo = Palette.CardHigh
+            val hi = Palette.Fg
+            Bars(bands, ticker, colorOf = { v -> lerp(lo, hi, v) })
             BandAxis()
         }
         Panel {
-            SectionLabel("Spektrogram")
+            SectionLabel(stringResource(R.string.snd_spectrogram))
             Canvas(Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(12.dp)).background(Color.Black)) {
                 @Suppress("UNUSED_VARIABLE") val t = ticker.state.intValue
                 val cw = size.width / BANDS
@@ -284,20 +303,22 @@ fun SoundMeter(onBack: () -> Unit) {
             BandAxis()
         }
         Panel {
-            SectionLabel("Dominująca częstotliwość · stroik")
+            SectionLabel(stringResource(R.string.snd_tuner))
             val note = noteOf(peakHz)
+            val hName = stringResource(R.string.note_h)
+            val noteName = note?.first?.let { if (it.startsWith("H")) hName + it.drop(1) else it }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f)) {
-                    Text(if (peakHz > 0) "${fmt(peakHz, 1)} Hz" else "—", color = Color.White, style = Digits, fontSize = 28.sp)
+                    Text(if (peakHz > 0) "${fmt(peakHz, 1)} Hz" else "—", color = Palette.Fg, style = Digits, fontSize = 28.sp)
                     Text(
-                        if (note != null) "${if (note.second >= 0) "+" else ""}${note.second} centów" else "Brak wyraźnego tonu",
+                        if (note != null) stringResource(R.string.snd_cents, (if (note.second >= 0) "+" else "") + note.second) else stringResource(R.string.snd_no_tone),
                         color = Palette.TextDim,
                         fontSize = 13.sp,
                     )
                 }
                 Text(
-                    note?.first ?: "",
-                    color = if (note != null && abs(note.second) <= 5) Palette.Ok else Color.White,
+                    noteName ?: "",
+                    color = if (note != null && abs(note.second) <= 5) Palette.Ok else Palette.Fg,
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Bold,
                 )
@@ -305,6 +326,8 @@ fun SoundMeter(onBack: () -> Unit) {
             Spacer(Modifier.height(10.dp))
             TunerBar(note?.second)
         }
+        if (alarm > 0f) Tip(stringResource(R.string.snd_alarm_tip, fmt(alarm, 0)))
+        Tip(stringResource(R.string.snd_tip))
     }
 }
 
@@ -321,15 +344,18 @@ private fun BandAxis() {
 @Composable
 private fun TunerBar(cents: Int?) {
     Box(Modifier.fillMaxWidth().height(28.dp)) {
+        val ok = Palette.Ok
+        val faint = Palette.TextFaint
+        val fg = Palette.Fg
         Canvas(Modifier.fillMaxWidth().height(28.dp)) {
             val mid = size.width / 2
             for (i in -5..5) {
                 val x = mid + i * size.width / 11
-                drawLine(if (i == 0) Palette.Ok else Palette.TextFaint, Offset(x, if (i == 0) 0f else 8f), Offset(x, size.height - if (i == 0) 0f else 8f), if (i == 0) 3f else 1.5f)
+                drawLine(if (i == 0) ok else faint, Offset(x, if (i == 0) 0f else 8f), Offset(x, size.height - if (i == 0) 0f else 8f), if (i == 0) 3f else 1.5f)
             }
             if (cents != null) {
                 val x = mid + cents / 50f * (size.width * 5 / 11)
-                drawCircle(if (abs(cents) <= 5) Palette.Ok else Color.White, 8.dp.toPx(), Offset(x, size.height / 2))
+                drawCircle(if (abs(cents) <= 5) ok else fg, 8.dp.toPx(), Offset(x, size.height / 2))
             }
         }
     }

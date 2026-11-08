@@ -1,5 +1,21 @@
 # Zmiany
 
+## 2.0.0
+
+Duża przebudowa: nowy wygląd, angielski, nowe mierniki i funkcje.
+
+- Nowy czarno-biały interfejs w stylu OpenDial: płaskie karty, przyciski-pigułki, sprężyste wciśnięcia i dymki z nazwą po przytrzymaniu.
+- Motyw ciemny (AMOLED), jasny albo zgodny z systemem.
+- Język angielski i polski. Język wybierzesz w ustawieniach (a na Androidzie 13+ także w ustawieniach systemu). Teksty są w standardowych zasobach Androida – nowy język to jeden plik `values-xx/strings.xml`.
+- Ekran główny: wyszukiwarka-pigułka, chipy kategorii, przesuwanie palcem między kategoriami, menu ⋮ z nagraniami, dziennikiem, ustawieniami i zgłoszeniami.
+- Dziennik odczytów: ikona zakładki w każdym mierniku zapisuje bieżący odczyt z datą i godziną; do wpisów można dodać notatkę, a cały dziennik wysłać jako CSV.
+- Nowe mierniki: Generator tonu (sinus, prostokąt, trójkąt, szum, 20 Hz–20 kHz), Linijka na ekranie (cm i cale, z korektą skali) i Bateria (prąd, moc, napięcie, temperatura, stan, szacowana pojemność).
+- Jednostki metryczne lub imperialne (°F, stopy, mile) i wybór jednostki ciśnienia (hPa, mmHg, inHg).
+- Decybelomierz: alarm hałasu z wibracją po przekroczeniu progu.
+- Krokomierz: cel kroków i własna długość kroku.
+- Ekran powitalny przy pierwszym uruchomieniu i nowy ekran „O aplikacji” z informacją o prywatności.
+- Ustawienia uporządkowane w sekcje: wygląd, jednostki, ogólne, mierniki, dane, aktualizacje; reset kalibracji jednym przyciskiem.
+
 ## 1.2.0
 
 - Zgłaszanie błędów i sugestii: nowa pozycja „Zgłoś błąd lub sugestię” – opis trafia prosto do autora przez redzikowski.com, e-mail jest opcjonalny.

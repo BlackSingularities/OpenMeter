@@ -10,6 +10,15 @@ val appVersionCode = (project.findProperty("versionCode") as String?)?.toIntOrNu
 val appVersionName = (project.findProperty("versionName") as String?) ?: "1.0-dev"
 val keystorePath: String? = System.getenv("SIGNING_KEYSTORE_PATH")
 
+// Języki aplikacji = angielski (values) + każdy folder values-xx z plikiem strings.xml.
+// Nowy język to tylko nowy plik res/values-xx/strings.xml – lista w aplikacji tworzy się sama.
+val appLanguages: String = (
+    listOf("en") + (file("src/main/res").listFiles() ?: emptyArray())
+        .filter { it.isDirectory && Regex("values-[a-z]{2,3}(-r[A-Z]{2})?").matches(it.name) && File(it, "strings.xml").exists() }
+        .map { it.name.removePrefix("values-").replace("-r", "-") }
+        .sorted()
+    ).joinToString(",")
+
 android {
     namespace = "com.blacksingularities.openmeter"
     compileSdk = 36
@@ -22,6 +31,7 @@ android {
         versionName = appVersionName
         vectorDrawables.useSupportLibrary = true
         buildConfigField("String", "UPDATE_REPO", "\"BlackSingularities/OpenMeter\"")
+        buildConfigField("String", "LANGUAGES", "\"$appLanguages\"")
     }
 
     signingConfigs {
@@ -56,6 +66,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
+    androidResources {
+        // Lista języków dla ustawień systemu (Android 13+) – z folderów values-xx.
+        generateLocaleConfig = true
+    }
     buildFeatures {
         compose = true
         buildConfig = true
@@ -80,6 +94,7 @@ dependencies {
 
     implementation("androidx.core:core-ktx:1.17.0")
     implementation("androidx.activity:activity-compose:1.11.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.9.4")
     implementation("androidx.lifecycle:lifecycle-runtime-compose:2.9.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.2")

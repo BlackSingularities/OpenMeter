@@ -1,5 +1,6 @@
 package com.blacksingularities.openmeter.ui
 
+import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.RepeatMode
@@ -10,8 +11,6 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
@@ -37,33 +36,37 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.rounded.BookmarkBorder
 import androidx.compose.material.icons.rounded.FiberManualRecord
 import androidx.compose.material.icons.rounded.Stop
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.SliderDefaults
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.drawBehind
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -71,20 +74,97 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.blacksingularities.openmeter.core.Prefs
 import com.blacksingularities.openmeter.core.Recorder
 import com.blacksingularities.openmeter.core.Ring
+import com.blacksingularities.openmeter.core.Snapshots
 import com.blacksingularities.openmeter.core.Ticker
+import androidx.compose.ui.res.stringResource
+import com.blacksingularities.openmeter.R
 import com.blacksingularities.openmeter.meters.Meter
 import kotlinx.coroutines.delay
 import java.util.Locale
 import kotlin.math.abs
 import kotlin.math.max
 
-val CardShape = RoundedCornerShape(24.dp)
+val CardShape = RoundedCornerShape(26.dp)
 val PillShape = RoundedCornerShape(50)
 
-/** Ekran miernika: pasek z powrotem, tytułem i nagrywaniem, przewijana treść. */
+fun toast(context: Context, text: String, long: Boolean = false) {
+    Toast.makeText(context, text, if (long) Toast.LENGTH_LONG else Toast.LENGTH_SHORT).show()
+}
+
+/**
+ * Tablica bieżących odczytów ekranu: każdy [Readout] wpisuje tu swoją wartość, a przycisk
+ * „Zapisz odczyt” zapisuje ich złączenie do dziennika.
+ */
+class ReadingBoard {
+    private val slots = sortedMapOf<Int, String>()
+    private var next = 0
+    fun alloc(): Int = next++
+    fun put(slot: Int, text: String) {
+        slots[slot] = text
+    }
+
+    fun remove(slot: Int) {
+        slots.remove(slot)
+    }
+
+    fun text(): String = slots.values.filter { it.isNotBlank() && !it.startsWith("—") }.joinToString(" · ")
+}
+
+val LocalReadingBoard = staticCompositionLocalOf<ReadingBoard?> { null }
+
+/** Wysokość przycisków w nagłówkach. */
+val HeaderButton = 40.dp
+
+/** Ekran z nagłówkiem (powrót, tytuł, akcje) i przewijaną treścią. */
+@Composable
+fun PageScaffold(
+    title: String,
+    onBack: () -> Unit,
+    subtitle: String? = null,
+    icon: ImageVector? = null,
+    actions: @Composable RowScope.() -> Unit = {},
+    scroll: Boolean = true,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    Column(
+        Modifier
+            .fillMaxSize()
+            .background(Palette.Ink)
+            .windowInsetsPadding(WindowInsets.statusBars),
+    ) {
+        Row(
+            Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 10.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            RoundIcon(Icons.AutoMirrored.Rounded.ArrowBack, stringResource(R.string.back), onClick = onBack)
+            Spacer(Modifier.width(12.dp))
+            if (icon != null) {
+                Box(Modifier.size(34.dp).clip(CircleShape).background(Palette.Fg), contentAlignment = Alignment.Center) {
+                    Icon(icon, null, tint = Palette.Ink, modifier = Modifier.size(19.dp))
+                }
+                Spacer(Modifier.width(10.dp))
+            }
+            Column(Modifier.weight(1f)) {
+                Text(title, color = Palette.Fg, fontSize = 19.sp, fontWeight = FontWeight.Bold, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                if (subtitle != null) {
+                    Text(subtitle.uppercase(), color = Palette.TextFaint, fontSize = 10.sp, fontWeight = FontWeight.Bold, letterSpacing = 1.1.sp, maxLines = 1)
+                }
+            }
+            Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
+        }
+        val body = Modifier
+            .fillMaxSize()
+            .then(if (scroll) Modifier.verticalScroll(rememberScrollState()) else Modifier)
+            .padding(horizontal = 16.dp)
+            .windowInsetsPadding(WindowInsets.navigationBars)
+            .padding(bottom = 24.dp)
+        Column(body, verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
+    }
+}
+
+/** Ekran miernika: nagłówek z ikoną, zapis odczytu do dziennika i nagrywanie do CSV. */
 @Composable
 fun MeterScaffold(
     id: String,
@@ -101,81 +181,41 @@ fun MeterScaffold(
         onDispose {
             if (Recorder.isRecording(id)) {
                 val f = Recorder.stop(context)
-                if (f != null) Toast.makeText(context, "Zapisano ${f.name}", Toast.LENGTH_SHORT).show()
+                if (f != null) toast(context, context.getString(R.string.saved_file, f.name))
             }
         }
     }
     val meter = Meter.byId(id)
-    val accent = meter?.accent ?: Color.White
-    CompositionLocalProvider(LocalAccent provides accent) {
-        Column(
-            Modifier
-                .fillMaxSize()
-                .background(Palette.Ink)
-                .drawBehind {
-                    // Delikatna poświata w kolorze kategorii za nagłówkiem.
-                    drawRect(
-                        Brush.radialGradient(
-                            listOf(accent.copy(alpha = 0.16f), Color.Transparent),
-                            center = Offset(size.width * 0.15f, 0f),
-                            radius = size.width * 0.9f,
-                        ),
-                    )
-                }
-                .windowInsetsPadding(WindowInsets.statusBars),
-        ) {
-            Row(
-                Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                RoundIcon(Icons.AutoMirrored.Rounded.ArrowBack, "Wstecz", onClick = onBack)
-                Spacer(Modifier.width(12.dp))
-                if (meter != null) {
-                    Box(
-                        Modifier.size(34.dp).clip(RoundedCornerShape(11.dp)).background(accent.copy(alpha = 0.16f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Icon(meter.icon, null, tint = accent, modifier = Modifier.size(19.dp))
-                    }
-                    Spacer(Modifier.width(10.dp))
-                }
-                Column(Modifier.weight(1f)) {
-                    Text(
-                        title,
-                        color = Palette.Text,
-                        fontSize = 19.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                    )
-                    if (meter != null) {
-                        Text(meter.category.label, color = accent.copy(alpha = 0.8f), fontSize = 11.sp, fontWeight = FontWeight.Medium, maxLines = 1)
-                    }
-                }
+    val board = remember(id) { ReadingBoard() }
+    CompositionLocalProvider(LocalReadingBoard provides board) {
+        PageScaffold(
+            title = title,
+            onBack = onBack,
+            subtitle = meter?.let { stringResource(it.category.label) },
+            icon = meter?.icon,
+            actions = {
                 actions()
-                if (recordColumns != null) {
-                    Spacer(Modifier.width(8.dp))
-                    RecordButton(id, title, recordColumns, recordInterval)
+                if (meter != null && meter.snapshots) {
+                    RoundIcon(Icons.Rounded.BookmarkBorder, stringResource(R.string.snapshot_save)) {
+                        val text = board.text()
+                        if (text.isBlank()) {
+                            toast(context, context.getString(R.string.snapshot_empty))
+                        } else {
+                            Snapshots.add(context, id, text)
+                            toast(context, context.getString(R.string.snapshot_saved, text))
+                        }
+                    }
                 }
-            }
-            Column(
-                Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp)
-                    .windowInsetsPadding(WindowInsets.navigationBars)
-                    .padding(bottom = 24.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-                content = content,
-            )
-        }
+                if (recordColumns != null) RecordButton(id, title, recordColumns, recordInterval)
+            },
+            content = content,
+        )
     }
 }
 
 @Composable
 private fun RecordButton(id: String, title: String, columns: List<String>, interval: Long) {
     val context = LocalContext.current
-    val haptic = LocalHapticFeedback.current
     val recording = Recorder.isRecording(id)
     var now by remember { mutableLongStateOf(0L) }
     LaunchedEffect(recording) {
@@ -189,29 +229,29 @@ private fun RecordButton(id: String, title: String, columns: List<String>, inter
     val alpha by pulse.animateFloat(1f, 0.3f, infiniteRepeatable(tween(700), RepeatMode.Reverse), label = "a")
     Row(
         Modifier
-            .clip(PillShape)
-            .background(bg)
-            .clickable {
-                if (Prefs.haptics) haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+            .reactive(stringResource(if (recording) R.string.rec_stop else R.string.rec_start)) {
                 if (recording) {
                     val f = Recorder.stop(context)
-                    Toast.makeText(
+                    toast(
                         context,
-                        if (f != null) "Zapisano ${f.name}\n(także w Pobrane/OpenMeter)" else "Brak danych do zapisania",
-                        Toast.LENGTH_LONG,
-                    ).show()
+                        if (f != null) context.getString(R.string.rec_saved, f.name) else context.getString(R.string.rec_empty),
+                        long = true,
+                    )
                 } else {
                     Recorder.start(id, title, columns, interval)
                 }
             }
-            .padding(horizontal = 14.dp, vertical = 9.dp),
+            .height(HeaderButton)
+            .clip(PillShape)
+            .background(bg)
+            .padding(horizontal = 14.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
             if (recording) Icons.Rounded.Stop else Icons.Rounded.FiberManualRecord,
             null,
             tint = if (recording) Color.White else Palette.Record,
-            modifier = Modifier.size(18.dp).let { if (recording) it else it },
+            modifier = Modifier.size(18.dp),
         )
         Spacer(Modifier.width(6.dp))
         if (recording) {
@@ -223,39 +263,40 @@ private fun RecordButton(id: String, title: String, columns: List<String>, inter
                 fontSize = 14.sp,
             )
         } else {
-            Text("REC", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 13.sp)
+            Text("REC", color = Palette.Fg, fontWeight = FontWeight.Bold, fontSize = 13.sp)
         }
     }
 }
 
+/** Okrągły przycisk z ikoną. [active] = biały (w jasnym motywie czarny) z odwróconą ikoną. */
 @Composable
-fun RoundIcon(icon: ImageVector, description: String?, active: Boolean = false, onClick: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
-    val bg by animateColorAsState(if (active) LocalAccent.current else Palette.CardHigh, tween(160), label = "ri")
-    Box(
-        Modifier
-            .size(44.dp)
-            .clip(CircleShape)
-            .background(bg)
-            .clickable {
-                if (Prefs.haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onClick()
-            },
-        contentAlignment = Alignment.Center,
-    ) {
-        Icon(icon, description, tint = if (active) Palette.Ink else Color.White, modifier = Modifier.size(22.dp))
+fun RoundIcon(
+    icon: ImageVector,
+    description: String?,
+    active: Boolean = false,
+    size: Dp = HeaderButton,
+    badge: Boolean = false,
+    onClick: () -> Unit,
+) {
+    val bg by animateColorAsState(if (active) Palette.Fg else Palette.CardHigh, tween(160), label = "ri")
+    Box(Modifier.reactive(description, onClick = onClick)) {
+        Box(Modifier.size(size).clip(CircleShape).background(bg), contentAlignment = Alignment.Center) {
+            Icon(icon, null, tint = if (active) Palette.Ink else Palette.Fg, modifier = Modifier.size(size * 0.5f))
+        }
+        if (badge) {
+            Box(Modifier.align(Alignment.TopEnd).size(10.dp).clip(CircleShape).background(Palette.Record))
+        }
     }
 }
 
-/** Płaska karta z delikatną obwódką dookoła. */
+/** Płaska karta bez obwódki. */
 @Composable
-fun Panel(modifier: Modifier = Modifier, padding: Dp = 16.dp, content: @Composable ColumnScope.() -> Unit) {
+fun Panel(modifier: Modifier = Modifier, padding: Dp = 18.dp, content: @Composable ColumnScope.() -> Unit) {
     Column(
         modifier
             .fillMaxWidth()
             .clip(CardShape)
             .background(Palette.Card)
-            .border(1.dp, Palette.Line, CardShape)
             .padding(padding),
         content = content,
     )
@@ -266,14 +307,20 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text.uppercase(),
         color = Palette.TextFaint,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.SemiBold,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
         letterSpacing = 1.2.sp,
-        modifier = modifier.padding(bottom = 8.dp),
+        modifier = modifier.padding(bottom = 10.dp),
     )
 }
 
-/** Duży odczyt: wartość + jednostka + opis. */
+/** Drobny tekst pomocniczy pod kartami. */
+@Composable
+fun Tip(text: String, modifier: Modifier = Modifier) {
+    Text(text, color = Palette.TextFaint, fontSize = 12.sp, lineHeight = 17.sp, modifier = modifier.padding(horizontal = 4.dp))
+}
+
+/** Duży odczyt: wartość + jednostka + opis. Wartość trafia też na [ReadingBoard] ekranu. */
 @Composable
 fun Readout(
     value: String,
@@ -283,6 +330,17 @@ fun Readout(
     size: TextUnit = 64.sp,
     modifier: Modifier = Modifier,
 ) {
+    val board = LocalReadingBoard.current
+    if (board != null) {
+        val slot = remember(board) { board.alloc() }
+        val entry = buildString {
+            append(value)
+            if (unit.isNotEmpty()) append(' ').append(unit)
+            if (!caption.isNullOrBlank()) append(" (").append(caption).append(')')
+        }
+        SideEffect { board.put(slot, entry) }
+        DisposableEffect(board, slot) { onDispose { board.remove(slot) } }
+    }
     Column(modifier, horizontalAlignment = Alignment.CenterHorizontally) {
         Row(verticalAlignment = Alignment.Bottom) {
             Text(value, color = color, style = Digits, fontSize = size, fontWeight = FontWeight.Light, maxLines = 1)
@@ -300,12 +358,12 @@ fun Readout(
 /** Siatka par „etykieta / wartość”. */
 @Composable
 fun StatGrid(items: List<Pair<String, String>>, columns: Int = 3) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(14.dp)) {
         items.chunked(columns).forEach { row ->
             Row(Modifier.fillMaxWidth()) {
                 row.forEach { (label, value) ->
                     Column(Modifier.weight(1f)) {
-                        Text(label, color = Palette.TextFaint, fontSize = 11.sp, maxLines = 1)
+                        Text(label, color = Palette.TextFaint, fontSize = 11.sp, maxLines = 1, overflow = TextOverflow.Ellipsis)
                         Text(value, color = Palette.Text, style = Digits, fontSize = 17.sp, maxLines = 1)
                     }
                 }
@@ -318,24 +376,19 @@ fun StatGrid(items: List<Pair<String, String>>, columns: Int = 3) {
 /** Przełącznik segmentowy w kształcie pigułek. */
 @Composable
 fun Segmented(options: List<String>, selected: Int, modifier: Modifier = Modifier, onSelect: (Int) -> Unit) {
-    val haptic = LocalHapticFeedback.current
-    val accent = LocalAccent.current
     Row(
         modifier.clip(PillShape).background(Palette.CardHigh).padding(4.dp),
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         options.forEachIndexed { i, label ->
             val active = i == selected
-            val bg by animateColorAsState(if (active) accent else Color.Transparent, tween(160), label = "seg")
+            val bg by animateColorAsState(if (active) Palette.Fg else Color.Transparent, tween(160), label = "seg")
             Box(
                 Modifier
                     .weight(1f)
+                    .reactive(label, pressScale = 0.96f) { onSelect(i) }
                     .clip(PillShape)
                     .background(bg)
-                    .clickable {
-                        if (Prefs.haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onSelect(i)
-                    }
                     .padding(vertical = 9.dp),
                 contentAlignment = Alignment.Center,
             ) {
@@ -348,25 +401,21 @@ fun Segmented(options: List<String>, selected: Int, modifier: Modifier = Modifie
 /** Przycisk-pigułka z tekstem. */
 @Composable
 fun Pill(text: String, modifier: Modifier = Modifier, icon: ImageVector? = null, active: Boolean = false, onClick: () -> Unit) {
-    val haptic = LocalHapticFeedback.current
-    val bg by animateColorAsState(if (active) LocalAccent.current else Palette.CardHigh, tween(160), label = "pill")
+    val bg by animateColorAsState(if (active) Palette.Fg else Palette.CardHigh, tween(160), label = "pill")
     Row(
         modifier
+            .reactive(text, pressScale = 0.95f, onClick = onClick)
             .clip(PillShape)
             .background(bg)
-            .clickable {
-                if (Prefs.haptics) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onClick()
-            }
             .padding(horizontal = 16.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Center,
     ) {
         if (icon != null) {
-            Icon(icon, null, tint = if (active) Palette.Ink else Color.White, modifier = Modifier.size(18.dp))
+            Icon(icon, null, tint = if (active) Palette.Ink else Palette.Fg, modifier = Modifier.size(18.dp))
             Spacer(Modifier.width(6.dp))
         }
-        Text(text, color = if (active) Palette.Ink else Color.White, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
+        Text(text, color = if (active) Palette.Ink else Palette.Fg, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
 }
 
@@ -413,16 +462,18 @@ fun LineChart(
                 lo = minY ?: (a - pad)
                 hi = maxY ?: (b + pad)
             }
+            val grid = Palette.Grid
+            val line = Palette.Line
             Canvas(Modifier.fillMaxSize()) {
                 val w = size.width
                 val h = size.height
                 for (i in 0..4) {
                     val y = h * i / 4f
-                    drawLine(Palette.Grid, Offset(0f, y), Offset(w, y), 1f)
+                    drawLine(grid, Offset(0f, y), Offset(w, y), 1f)
                 }
                 if (symmetric || (lo < 0 && hi > 0)) {
                     val y0 = h * (hi / (hi - lo))
-                    drawLine(Palette.Line, Offset(0f, y0), Offset(w, y0), 1.5f)
+                    drawLine(line, Offset(0f, y0), Offset(w, y0), 1.5f)
                 }
                 for (s in series) {
                     val r = s.ring
@@ -443,7 +494,7 @@ fun LineChart(
                             lineTo(x0, h)
                             close()
                         }
-                        drawPath(area, Brush.verticalGradient(listOf(s.color.copy(alpha = 0.30f), s.color.copy(alpha = 0f))))
+                        drawPath(area, Brush.verticalGradient(listOf(s.color.copy(alpha = 0.25f), s.color.copy(alpha = 0f))))
                     }
                     drawPath(path, s.color, style = Stroke(width = 2.2.dp.toPx(), cap = StrokeCap.Round))
                 }
@@ -476,15 +527,17 @@ fun ArcGauge(
     content: @Composable BoxScope.() -> Unit,
 ) {
     val f by animateFloatAsState(fraction.coerceIn(0f, 1f), tween(180), label = "gauge")
+    val track = Palette.CardHigh
+    val dim = Palette.TextDim
+    val faint = Palette.TextFaint
     Box(modifier.fillMaxWidth().aspectRatio(1.25f), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize().padding(8.dp)) {
             val stroke = 14.dp.toPx()
             val d = minOf(size.width, size.height * 1.2f) - stroke
             val topLeft = Offset((size.width - d) / 2, stroke / 2 + 4.dp.toPx())
             val arcSize = Size(d, d)
-            drawArc(Palette.CardHigh, 150f, 240f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
+            drawArc(track, 150f, 240f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             if (f > 0.001f) {
-                drawArc(color.copy(alpha = 0.16f), 150f, 240f * f, false, topLeft, arcSize, style = Stroke(stroke * 2.2f, cap = StrokeCap.Round))
                 drawArc(color, 150f, 240f * f, false, topLeft, arcSize, style = Stroke(stroke, cap = StrokeCap.Round))
             }
             val c = Offset(topLeft.x + d / 2, topLeft.y + d / 2)
@@ -496,7 +549,7 @@ fun ArcGauge(
                 val cos = kotlin.math.cos(a).toFloat()
                 val sin = kotlin.math.sin(a).toFloat()
                 drawLine(
-                    if (major) Palette.TextDim else Palette.TextFaint,
+                    if (major) dim else faint,
                     Offset(c.x + cos * rIn, c.y + sin * rIn),
                     Offset(c.x + cos * rOut, c.y + sin * rOut),
                     strokeWidth = if (major) 2.dp.toPx() else 1.dp.toPx(),
@@ -510,7 +563,7 @@ fun ArcGauge(
 
 /** Słupki widma (wartości 0..1). */
 @Composable
-fun Bars(values: FloatArray, ticker: Ticker, modifier: Modifier = Modifier, height: Dp = 140.dp, colorOf: (Float) -> Color = { Color.White }) {
+fun Bars(values: FloatArray, ticker: Ticker, modifier: Modifier = Modifier, height: Dp = 140.dp, colorOf: (Float) -> Color) {
     Canvas(modifier.fillMaxWidth().height(height)) {
         @Suppress("UNUSED_VARIABLE") val t = ticker.state.intValue
         val n = values.size
@@ -539,6 +592,73 @@ fun Notice(text: String, action: String? = null, onAction: () -> Unit = {}) {
             Spacer(Modifier.height(12.dp))
             Pill(action, active = true, onClick = onAction)
         }
+    }
+}
+
+/** Wiersz ustawienia z przełącznikiem. */
+@Composable
+fun Toggle(label: String, hint: String?, value: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().reactive(label, pressScale = 0.98f) { onChange(!value) }.padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 8.dp)) {
+            Text(label, color = Palette.Fg, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+            if (hint != null) Text(hint, color = Palette.TextFaint, fontSize = 12.sp, lineHeight = 16.sp)
+        }
+        Switch(
+            checked = value,
+            onCheckedChange = onChange,
+            colors = SwitchDefaults.colors(
+                checkedThumbColor = Palette.Ink,
+                checkedTrackColor = Palette.Fg,
+                checkedBorderColor = Palette.Fg,
+                uncheckedThumbColor = Palette.TextDim,
+                uncheckedTrackColor = Palette.CardHigh,
+                uncheckedBorderColor = Palette.Line,
+            ),
+        )
+    }
+}
+
+@Composable
+fun sliderColors(color: Color = Palette.Fg) = SliderDefaults.colors(
+    thumbColor = color,
+    activeTrackColor = color,
+    inactiveTrackColor = Palette.CardHigh,
+    activeTickColor = Color.Transparent,
+    inactiveTickColor = Color.Transparent,
+)
+
+/** Okno w stylu aplikacji z przyciskami-pigułkami. */
+@Composable
+fun AppDialog(
+    title: String,
+    onDismiss: () -> Unit,
+    buttons: @Composable RowScope.() -> Unit,
+    content: @Composable ColumnScope.() -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Palette.Card,
+        shape = RoundedCornerShape(28.dp),
+        title = { Text(title, color = Palette.Fg, fontWeight = FontWeight.Bold, fontSize = 20.sp) },
+        text = { Column(verticalArrangement = Arrangement.spacedBy(10.dp), content = content) },
+        confirmButton = { Row(horizontalArrangement = Arrangement.spacedBy(8.dp), content = buttons) },
+    )
+}
+
+@Composable
+fun ConfirmDialog(title: String, text: String, confirm: String, onDismiss: () -> Unit, onConfirm: () -> Unit) {
+    AppDialog(
+        title,
+        onDismiss,
+        buttons = {
+            Pill(stringResource(R.string.cancel), onClick = onDismiss)
+            Pill(confirm, active = true, onClick = onConfirm)
+        },
+    ) {
+        Text(text, color = Palette.TextDim, fontSize = 14.sp, lineHeight = 20.sp)
     }
 }
 

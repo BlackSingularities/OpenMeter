@@ -13,6 +13,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.blacksingularities.openmeter.BuildConfig
+import com.blacksingularities.openmeter.R
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -70,7 +71,7 @@ fun parseRelease(json: String): ReleaseInfo {
             break
         }
     }
-    if (url.isEmpty()) error("Wydanie nie zawiera pliku APK")
+    if (url.isEmpty()) error("Release has no APK file")
     return ReleaseInfo(
         version = o.optString("tag_name").removePrefix("v"),
         notes = "",
@@ -107,8 +108,8 @@ object UpdateManager {
                 if (isNewer(info.version, currentVersion)) UpdateState.Available(info) else UpdateState.UpToDate
             }.getOrElse { UpdateState.Failed(it.message ?: it.javaClass.simpleName) }
             if (manual) bannerHidden = false
-            if (manual && state is UpdateState.UpToDate) Toast.makeText(app, "Masz najnowszą wersję ($currentVersion)", Toast.LENGTH_SHORT).show()
-            if (manual && state is UpdateState.Failed) Toast.makeText(app, "Nie udało się sprawdzić: ${(state as UpdateState.Failed).message}", Toast.LENGTH_LONG).show()
+            if (manual && state is UpdateState.UpToDate) Toast.makeText(app, app.getString(R.string.update_latest_x, currentVersion), Toast.LENGTH_SHORT).show()
+            if (manual && state is UpdateState.Failed) Toast.makeText(app, app.getString(R.string.update_check_failed, (state as UpdateState.Failed).message), Toast.LENGTH_LONG).show()
         }
     }
 
@@ -118,7 +119,7 @@ object UpdateManager {
         when (val s = state) {
             is UpdateState.Available -> {
                 if (!canInstall(app)) {
-                    Toast.makeText(app, "Zezwól OpenMeter na instalowanie aplikacji i dotknij ponownie", Toast.LENGTH_LONG).show()
+                    Toast.makeText(app, app.getString(R.string.update_allow_install), Toast.LENGTH_LONG).show()
                     openInstallPermissionSettings(app)
                     return
                 }
@@ -130,14 +131,14 @@ object UpdateManager {
                         state = UpdateState.Installing(s.info)
                         install(app, f)
                     }.onFailure {
-                        state = UpdateState.Failed(it.message ?: "błąd")
-                        Toast.makeText(app, "Aktualizacja nieudana: ${it.message}", Toast.LENGTH_LONG).show()
+                        state = UpdateState.Failed(it.message ?: it.javaClass.simpleName)
+                        Toast.makeText(app, app.getString(R.string.update_failed, it.message ?: ""), Toast.LENGTH_LONG).show()
                     }
                 }
             }
             is UpdateState.Ready -> scope.launch {
                 state = UpdateState.Installing(s.info)
-                runCatching { install(app, s.file) }.onFailure { state = UpdateState.Failed(it.message ?: "błąd") }
+                runCatching { install(app, s.file) }.onFailure { state = UpdateState.Failed(it.message ?: it.javaClass.simpleName) }
             }
             else -> check(app, manual = true)
         }
@@ -157,7 +158,7 @@ object UpdateManager {
             setRequestProperty("User-Agent", "OpenMeter/" + BuildConfig.VERSION_NAME)
         }
         try {
-            if (conn.responseCode != 200) error("serwer odpowiedział kodem ${conn.responseCode}")
+            if (conn.responseCode != 200) error("HTTP ${conn.responseCode}")
             return conn.inputStream.bufferedReader().use { it.readText() }
         } finally {
             conn.disconnect()
@@ -176,7 +177,7 @@ object UpdateManager {
             setRequestProperty("User-Agent", "OpenMeter/" + BuildConfig.VERSION_NAME)
         }
         try {
-            if (conn.responseCode !in 200..299) error("pobieranie nie powiodło się (${conn.responseCode})")
+            if (conn.responseCode !in 200..299) error("download failed (HTTP ${conn.responseCode})")
             val total = conn.contentLengthLong.takeIf { it > 0 } ?: info.sizeBytes
             conn.inputStream.use { input ->
                 part.outputStream().use { out ->
@@ -196,7 +197,7 @@ object UpdateManager {
                     }
                 }
             }
-            if (!part.renameTo(target)) error("nie można zapisać pliku aktualizacji")
+            if (!part.renameTo(target)) error("cannot save the update file")
             onProgress(1f)
             target
         } finally {
@@ -266,8 +267,8 @@ class UpdateReceiver : BroadcastReceiver() {
             else -> {
                 UpdateManager.installAborted()
                 if (status != PackageInstaller.STATUS_FAILURE_ABORTED) {
-                    val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "kod $status"
-                    Toast.makeText(context, "Aktualizacja nieudana: $msg", Toast.LENGTH_LONG).show()
+                    val msg = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE) ?: "code $status"
+                    Toast.makeText(context, context.getString(R.string.update_failed, msg), Toast.LENGTH_LONG).show()
                 }
             }
         }

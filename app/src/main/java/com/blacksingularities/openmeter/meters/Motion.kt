@@ -45,6 +45,9 @@ import com.blacksingularities.openmeter.ui.Series
 import com.blacksingularities.openmeter.ui.StatGrid
 import com.blacksingularities.openmeter.ui.fmt
 import com.blacksingularities.openmeter.ui.levelColor
+import androidx.compose.ui.res.stringResource
+import com.blacksingularities.openmeter.R
+import com.blacksingularities.openmeter.ui.Tip
 import kotlin.math.log10
 import kotlin.math.sqrt
 
@@ -98,8 +101,8 @@ private fun MotionSensors(state: MotionState, onSample: (Long) -> Unit) {
 
 private val ROMAN = listOf("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X")
 private val MERCALLI = listOf(
-    "Nieodczuwalne", "Ledwo odczuwalne", "Słabe", "Lekkie", "Umiarkowane",
-    "Silne", "Bardzo silne", "Niszczące", "Gwałtowne", "Ekstremalne",
+    R.string.merc_1, R.string.merc_2, R.string.merc_3, R.string.merc_4, R.string.merc_5,
+    R.string.merc_6, R.string.merc_7, R.string.merc_8, R.string.merc_9, R.string.merc_10,
 )
 
 /** Intensywność instrumentalna (Wald i in., 1999) z PGA w m/s². */
@@ -147,9 +150,9 @@ fun Seismograph(onBack: () -> Unit) {
     }
 
     val span = listOf(null, 0.2f, 2f, 20f)[scale]
-    MeterScaffold(Meter.Seismo.id, Meter.Seismo.title, onBack, recordColumns = listOf("ax", "ay", "az", "magnitude_ms2"), recordInterval = 0) {
+    MeterScaffold(Meter.Seismo.id, stringResource(Meter.Seismo.title), onBack, recordColumns = listOf("ax", "ay", "az", "magnitude_ms2"), recordInterval = 0) {
         Panel {
-            SectionLabel("Przebieg · m/s²")
+            SectionLabel(stringResource(R.string.seis_wave))
             LineChart(
                 listOf(Series(rx, Palette.AxisX, "X"), Series(ry, Palette.AxisY, "Y"), Series(rz, Palette.AxisZ, "Z")),
                 ticker,
@@ -165,39 +168,34 @@ fun Seismograph(onBack: () -> Unit) {
         Panel {
             val i = mercalli(peak)
             Row {
-                Readout(fmt(mag, 3), "m/s²", "Bieżące drgania", modifier = Modifier.weight(1f), size = 36.sp)
-                Readout(ROMAN[i - 1], "", MERCALLI[i - 1], color = levelColor(i / 10f), modifier = Modifier.weight(1f), size = 36.sp)
+                Readout(fmt(mag, 3), "m/s²", stringResource(R.string.seis_current), modifier = Modifier.weight(1f), size = 36.sp)
+                Readout(ROMAN[i - 1], "", stringResource(MERCALLI[i - 1]), color = levelColor(i / 10f), modifier = Modifier.weight(1f), size = 36.sp)
             }
             Spacer(Modifier.height(14.dp))
             StatGrid(
                 listOf(
-                    "Szczyt (PGA)" to fmt(peak, 3),
-                    "Szczyt w g" to fmt(peak / 9.80665f, 4),
-                    "Zdarzenia" to "$events",
-                    "Próbkowanie" to "${fmt(rate, 0)} Hz",
+                    stringResource(R.string.seis_peak) to fmt(peak, 3),
+                    stringResource(R.string.seis_peak_g) to fmt(peak / 9.80665f, 4),
+                    stringResource(R.string.seis_events) to "$events",
+                    stringResource(R.string.sampling) to "${fmt(rate, 0)} Hz",
                 ),
                 columns = 2,
             )
             Spacer(Modifier.height(14.dp))
-            Pill("Zeruj", icon = Icons.Rounded.RestartAlt) { peak = 0f; events = 0; rx.clear(); ry.clear(); rz.clear() }
+            Pill(stringResource(R.string.reset), icon = Icons.Rounded.RestartAlt) { peak = 0f; events = 0; rx.clear(); ry.clear(); rz.clear() }
         }
-        Text(
-            "Połóż telefon na stabilnej, twardej powierzchni ekranem do góry. Skala intensywności (Mercalli) jest szacunkowa – akcelerometr telefonu nie zastąpi sejsmometru.",
-            color = Palette.TextFaint,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
-        )
+        Tip(stringResource(R.string.seis_tip))
     }
 }
 
 /** Ocena komfortu wg ISO 2631-1 (przyspieszenie ważone RMS, m/s²). */
-private fun comfort(a: Float): Pair<String, Float> = when {
-    a < 0.315f -> "Komfortowo" to 0.1f
-    a < 0.63f -> "Lekko odczuwalne" to 0.4f
-    a < 1f -> "Dość niekomfortowo" to 0.65f
-    a < 1.6f -> "Niekomfortowo" to 0.8f
-    a < 2.5f -> "Bardzo niekomfortowo" to 0.9f
-    else -> "Skrajnie niekomfortowo" to 1f
+private fun comfort(a: Float): Pair<Int, Float> = when {
+    a < 0.315f -> R.string.vib_c1 to 0.1f
+    a < 0.63f -> R.string.vib_c2 to 0.4f
+    a < 1f -> R.string.vib_c3 to 0.65f
+    a < 1.6f -> R.string.vib_c4 to 0.8f
+    a < 2.5f -> R.string.vib_c5 to 0.9f
+    else -> R.string.vib_c6 to 1f
 }
 
 private const val VIB_N = 256
@@ -279,59 +277,56 @@ fun VibrationMeter(onBack: () -> Unit) {
     val (label, frac) = comfort(rms)
     MeterScaffold(
         Meter.Vibration.id,
-        Meter.Vibration.title,
+        stringResource(Meter.Vibration.title),
         onBack,
         recordColumns = listOf("aw_rms_ms2", "vertical_rms", "horizontal_rms", "peak_ms2", "dominant_hz"),
         recordInterval = 0,
     ) {
         Panel {
             ArcGauge((rms / 3f).coerceIn(0f, 1f), levelColor(frac)) {
-                Readout(fmt(rms, 2), "m/s²", label)
+                Readout(fmt(rms, 2), "m/s²", stringResource(label))
             }
             StatGrid(
                 listOf(
-                    "Pionowo" to fmt(rmsV, 2),
-                    "Poziomo" to fmt(rmsH, 2),
-                    "Częstotl." to if (domHz.isNaN()) "—" else "${fmt(domHz, 1)} Hz",
-                    "Maks" to fmt(maxRms, 2),
-                    "Średnio" to fmt(if (nRms == 0) Float.NaN else sumRms / nRms, 2),
-                    "Wstrząsy" to "$bumps",
+                    stringResource(R.string.vertical) to fmt(rmsV, 2),
+                    stringResource(R.string.horizontal) to fmt(rmsH, 2),
+                    stringResource(R.string.frequency) to if (domHz.isNaN()) "—" else "${fmt(domHz, 1)} Hz",
+                    stringResource(R.string.max) to fmt(maxRms, 2),
+                    stringResource(R.string.avg) to fmt(if (nRms == 0) Float.NaN else sumRms / nRms, 2),
+                    stringResource(R.string.vib_bumps) to "$bumps",
                 ),
             )
             Spacer(Modifier.height(14.dp))
-            Pill("Nowy przejazd", icon = Icons.Rounded.RestartAlt) {
+            Pill(stringResource(R.string.vib_new_ride), icon = Icons.Rounded.RestartAlt) {
                 maxRms = 0f; bumps = 0; sumRms = 0f; nRms = 0; history.clear(); vertHist.clear()
             }
         }
         Panel {
-            SectionLabel("Przebieg RMS · 30 s")
+            SectionLabel(stringResource(R.string.vib_rms))
             LineChart(
-                listOf(Series(history, Color.White, "Ważone"), Series(vertHist, Palette.AxisZ, "Pionowo")),
+                listOf(Series(history, Palette.Fg, stringResource(R.string.vib_weighted)), Series(vertHist, Palette.AxisZ, stringResource(R.string.vertical))),
                 ticker,
                 minY = 0f,
                 minSpan = 0.5f,
             )
         }
         Panel {
-            SectionLabel("Widmo drgań pionowych · 1–30 Hz")
-            Bars(bands, ticker, height = 110.dp, colorOf = { lerp(Color(0xFF3A3A3A), Palette.AxisZ, it) })
+            SectionLabel(stringResource(R.string.vib_spectrum))
+            val lo = Palette.CardHigh
+            val hi = Palette.AxisZ
+            Bars(bands, ticker, height = 110.dp, colorOf = { lerp(lo, hi, it) })
             Row(Modifier.fillMaxWidth().padding(top = 6.dp)) {
                 listOf("1", "5", "10", "15", "20", "25", "30 Hz").forEach {
                     Text(it, color = Palette.TextFaint, fontSize = 10.sp, modifier = Modifier.weight(1f))
                 }
             }
             Text(
-                "Typowo: zawieszenie auta 1–2 Hz, koła i nierówności 10–20 Hz, wagon kolejowy 0,5–8 Hz.",
+                stringResource(R.string.vib_typical),
                 color = Palette.TextFaint,
                 fontSize = 12.sp,
                 modifier = Modifier.padding(top = 8.dp),
             )
         }
-        Text(
-            "Połóż telefon płasko na siedzeniu lub podłodze pojazdu. Komfort oceniany według ISO 2631-1 z przyspieszenia RMS (oś pozioma ×1,4).",
-            color = Palette.TextFaint,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
-        )
+        Tip(stringResource(R.string.vib_tip))
     }
 }

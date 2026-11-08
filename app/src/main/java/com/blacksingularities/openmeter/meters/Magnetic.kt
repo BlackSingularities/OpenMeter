@@ -59,6 +59,9 @@ import com.blacksingularities.openmeter.ui.StatGrid
 import com.blacksingularities.openmeter.ui.fmt
 import com.blacksingularities.openmeter.ui.levelColor
 import kotlinx.coroutines.delay
+import androidx.compose.ui.res.stringResource
+import com.blacksingularities.openmeter.R
+import com.blacksingularities.openmeter.ui.Tip
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.roundToInt
@@ -107,41 +110,37 @@ fun MetalDetector(onBack: () -> Unit) {
 
     MeterScaffold(
         Meter.Metal.id,
-        Meter.Metal.title,
+        stringResource(Meter.Metal.title),
         onBack,
         recordColumns = listOf("bx_uT", "by_uT", "bz_uT", "magnitude_uT"),
         recordInterval = 50,
         actions = {
             com.blacksingularities.openmeter.ui.RoundIcon(
                 if (Prefs.detectorSound) Icons.Rounded.VolumeUp else Icons.Rounded.VolumeOff,
-                "Dźwięk",
+                stringResource(R.string.metal_sound),
+                active = Prefs.detectorSound,
             ) { Prefs.detectorSound = (!Prefs.detectorSound) }
         },
     ) {
         if (accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
-            Notice("Magnetometr wymaga kalibracji – zakreśl telefonem kilka razy ósemkę w powietrzu.")
+            Notice(stringResource(R.string.metal_calibrate))
         }
         Panel {
             val frac = (delta / 100f).coerceIn(0f, 1f)
             ArcGauge(frac, levelColor(frac)) {
-                Readout(fmt(field, 1), "µT", if (delta > 6f) "Wykryto metal · Δ ${fmt(delta, 1)} µT" else "Brak zakłóceń · Δ ${fmt(delta, 1)} µT")
+                Readout(fmt(field, 1), "µT", stringResource(if (delta > 6f) R.string.metal_found else R.string.metal_none, fmt(delta, 1)))
             }
-            StatGrid(listOf("X" to fmt(xyz[0], 1), "Y" to fmt(xyz[1], 1), "Z" to fmt(xyz[2], 1), "Tło" to fmt(baseline, 1), "Ziemia" to "25–65", "Jednostka" to "µT"))
+            StatGrid(listOf("X" to fmt(xyz[0], 1), "Y" to fmt(xyz[1], 1), "Z" to fmt(xyz[2], 1), stringResource(R.string.metal_baseline) to fmt(baseline, 1), stringResource(R.string.metal_earth) to "25–65", stringResource(R.string.unit) to "µT"))
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill("Ustaw tło", icon = Icons.Rounded.MyLocation, active = true) { baseline = field }
+                Pill(stringResource(R.string.metal_set_baseline), icon = Icons.Rounded.MyLocation, active = true) { baseline = field }
             }
         }
         Panel {
-            SectionLabel("Natężenie pola")
-            LineChart(listOf(Series(history, Color(0xFF6FA8FF))), ticker, fill = true, minSpan = 10f)
+            SectionLabel(stringResource(R.string.metal_field))
+            LineChart(listOf(Series(history, Palette.Fg)), ticker, fill = true, minSpan = 10f)
         }
-        Text(
-            "Magnetometr znajduje się zwykle przy górnej krawędzi telefonu. Wykrywa przedmioty ferromagnetyczne (stal, żelazo), magnesy i przewody z prądem – nie złoto ani aluminium. Ustaw tło z dala od metalu i powoli przesuwaj telefon.",
-            color = Palette.TextFaint,
-            fontSize = 12.sp,
-            lineHeight = 16.sp,
-        )
+        Tip(stringResource(R.string.metal_tip))
     }
 }
 
@@ -197,9 +196,9 @@ fun CompassMeter(onBack: () -> Unit) {
         if (!useRotation && SensorManager.getRotationMatrix(rot, null, accel, mag)) apply()
     }
 
-    MeterScaffold(Meter.Compass.id, Meter.Compass.title, onBack, recordColumns = listOf("azimuth_deg", "pitch_deg", "roll_deg", "field_uT"), recordInterval = 100) {
+    MeterScaffold(Meter.Compass.id, stringResource(Meter.Compass.title), onBack, recordColumns = listOf("azimuth_deg", "pitch_deg", "roll_deg", "field_uT"), recordInterval = 100) {
         if (accuracy <= SensorManager.SENSOR_STATUS_ACCURACY_LOW) {
-            Notice("Kompas jest niedokładny – zakreśl telefonem kilka razy ósemkę w powietrzu i odsuń go od metalu.")
+            Notice(stringResource(R.string.compass_calibrate))
         }
         Panel {
             CompassDial(if (azimuth.isNaN()) 0f else azimuth, target)
@@ -211,26 +210,33 @@ fun CompassMeter(onBack: () -> Unit) {
                     var d = target - azimuth
                     if (d > 180) d -= 360f
                     if (d < -180) d += 360f
-                    if (abs(d) < 3) "Na kursie" else "Namiar ${target.roundToInt()}° · obróć ${if (d > 0) "w prawo" else "w lewo"} o ${abs(d).roundToInt()}°"
-                } else "Azymut magnetyczny",
+                    if (abs(d) < 3) stringResource(R.string.compass_on_course)
+                    else stringResource(if (d > 0) R.string.compass_turn_right else R.string.compass_turn_left, target.roundToInt(), abs(d).roundToInt())
+                } else stringResource(R.string.compass_magnetic),
             )
             Spacer(Modifier.height(12.dp))
-            StatGrid(listOf("Pochylenie" to "${fmt(pitch, 0)}°", "Przechył" to "${fmt(roll, 0)}°", "Pole" to "${fmt(fieldStrength, 0)} µT"))
+            StatGrid(listOf(stringResource(R.string.pitch) to "${fmt(pitch, 0)}°", stringResource(R.string.roll) to "${fmt(roll, 0)}°", stringResource(R.string.field) to "${fmt(fieldStrength, 0)} µT"))
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill("Zapamiętaj namiar", icon = Icons.Rounded.MyLocation, active = !target.isNaN()) { target = azimuth }
-                if (!target.isNaN()) Pill("Usuń", icon = Icons.Rounded.Close) { target = Float.NaN }
+                Pill(stringResource(R.string.compass_bearing), icon = Icons.Rounded.MyLocation, active = !target.isNaN()) { target = azimuth }
+                if (!target.isNaN()) Pill(stringResource(R.string.delete), icon = Icons.Rounded.Close) { target = Float.NaN }
             }
         }
+        Tip(stringResource(R.string.compass_tip))
     }
 }
 
 @Composable
 private fun CompassDial(azimuth: Float, target: Float) {
+    val card = Palette.Card
+    val fg = Palette.Fg
+    val faint = Palette.TextFaint
+    val dim = Palette.TextDim
+    val ok = Palette.Ok
     Canvas(Modifier.fillMaxWidth().aspectRatio(1f)) {
         val c = center
         val r = size.minDimension / 2 - 8.dp.toPx()
-        drawCircle(Palette.Card, r, c)
+        drawCircle(card, r, c)
         // Znacznik kierunku telefonu na górze.
         val tri = Path().apply {
             moveTo(c.x, c.y - r - 6.dp.toPx())
@@ -247,7 +253,7 @@ private fun CompassDial(azimuth: Float, target: Float) {
                 val ca = cos(a).toFloat()
                 val sa = sin(a).toFloat()
                 drawLine(
-                    if (major) Color.White else Palette.TextFaint,
+                    if (major) fg else faint,
                     Offset(c.x + ca * (r - 4.dp.toPx()), c.y + sa * (r - 4.dp.toPx())),
                     Offset(c.x + ca * (r - 4.dp.toPx() - len), c.y + sa * (r - 4.dp.toPx() - len)),
                     if (major) 2.5f else 1.5f,
@@ -262,7 +268,7 @@ private fun CompassDial(azimuth: Float, target: Float) {
             listOf("N" to 0, "E" to 90, "S" to 180, "W" to 270).forEach { (label, d) ->
                 val a = Math.toRadians(d - 90.0)
                 val rr = r - 48.dp.toPx()
-                paint.color = (if (label == "N") Palette.Record else Color.White).toArgb()
+                paint.color = (if (label == "N") Palette.Record else fg).toArgb()
                 drawContext.canvas.nativeCanvas.save()
                 drawContext.canvas.nativeCanvas.rotate(d.toFloat(), c.x + cos(a).toFloat() * rr, c.y + sin(a).toFloat() * rr)
                 drawContext.canvas.nativeCanvas.drawText(label, c.x + cos(a).toFloat() * rr, c.y + sin(a).toFloat() * rr + 8.dp.toPx(), paint)
@@ -270,7 +276,7 @@ private fun CompassDial(azimuth: Float, target: Float) {
             }
             if (!target.isNaN()) {
                 val a = Math.toRadians(target - 90.0)
-                drawCircle(Palette.Ok, 7.dp.toPx(), Offset(c.x + cos(a).toFloat() * (r - 70.dp.toPx()), c.y + sin(a).toFloat() * (r - 70.dp.toPx())))
+                drawCircle(ok, 7.dp.toPx(), Offset(c.x + cos(a).toFloat() * (r - 70.dp.toPx()), c.y + sin(a).toFloat() * (r - 70.dp.toPx())))
             }
         }
         // Igła.
@@ -282,8 +288,8 @@ private fun CompassDial(azimuth: Float, target: Float) {
         }
         rotate(-azimuth, c) {
             drawPath(needleN, Palette.Record)
-            drawPath(needleS, Palette.TextDim)
+            drawPath(needleS, dim)
         }
-        drawCircle(Color.White, 5.dp.toPx(), c)
+        drawCircle(fg, 5.dp.toPx(), c)
     }
 }

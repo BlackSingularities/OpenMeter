@@ -39,31 +39,34 @@ import com.blacksingularities.openmeter.ui.Series
 import com.blacksingularities.openmeter.ui.StatGrid
 import com.blacksingularities.openmeter.ui.fmt
 import com.blacksingularities.openmeter.ui.formatSmart
+import androidx.compose.ui.res.stringResource
+import com.blacksingularities.openmeter.R
+import com.blacksingularities.openmeter.ui.Tip
 import kotlin.math.log10
 import kotlin.math.log2
 
 /** Zalecane natężenie oświetlenia (PN-EN 12464-1, w przybliżeniu). */
 private val guide = listOf(
-    50f to "Korytarz, oświetlenie nocne",
-    150f to "Klatka schodowa, magazyn",
-    300f to "Salon, kuchnia",
-    500f to "Biuro, nauka, czytanie",
-    750f to "Rysunek techniczny, precyzyjna praca",
-    1000f to "Praca bardzo precyzyjna",
-    10000f to "Dzień pochmurny na zewnątrz",
-    100000f to "Pełne słońce",
+    50f to R.string.lux_g1,
+    150f to R.string.lux_g2,
+    300f to R.string.lux_g3,
+    500f to R.string.lux_g4,
+    750f to R.string.lux_g5,
+    1000f to R.string.lux_g6,
+    10000f to R.string.lux_g7,
+    100000f to R.string.lux_g8,
 )
 
-private fun describe(lux: Float): String = when {
-    lux < 1 -> "Ciemność"
-    lux < 10 -> "Półmrok"
-    lux < 50 -> "Słabe oświetlenie"
-    lux < 200 -> "Przytulne światło"
-    lux < 500 -> "Oświetlenie mieszkania"
-    lux < 1000 -> "Jasne biuro"
-    lux < 10000 -> "Światło dzienne w cieniu"
-    lux < 40000 -> "Jasny dzień"
-    else -> "Pełne słońce"
+private fun describe(lux: Float): Int = when {
+    lux < 1 -> R.string.lux_d1
+    lux < 10 -> R.string.lux_d2
+    lux < 50 -> R.string.lux_d3
+    lux < 200 -> R.string.lux_d4
+    lux < 500 -> R.string.lux_d5
+    lux < 1000 -> R.string.lux_d6
+    lux < 10000 -> R.string.lux_d7
+    lux < 40000 -> R.string.lux_d8
+    else -> R.string.lux_g8
 }
 
 @Composable
@@ -85,44 +88,45 @@ fun LightMeter(onBack: () -> Unit) {
         Recorder.log(Meter.Light.id, v[0], l)
     }
 
-    MeterScaffold(Meter.Light.id, Meter.Light.title, onBack, recordColumns = listOf("lux_raw", "lux_smoothed"), recordInterval = 100) {
+    MeterScaffold(Meter.Light.id, stringResource(Meter.Light.title), onBack, recordColumns = listOf("lux_raw", "lux_smoothed"), recordInterval = 100) {
         Panel {
             // Skala logarytmiczna 0,1 lx … 100 000 lx.
             val frac = if (lux.isNaN()) 0f else ((log10(lux.coerceAtLeast(0.1f)) + 1f) / 6f)
-            ArcGauge(frac, Color(0xFFFFD27A)) {
-                Readout(if (lux.isNaN()) "—" else formatLux(lux), "lx", if (lux.isNaN()) "Czekam na odczyt…" else describe(lux))
+            ArcGauge(frac, Palette.Fg) {
+                Readout(if (lux.isNaN()) "—" else formatLux(lux), "lx", if (lux.isNaN()) stringResource(R.string.waiting) else stringResource(describe(lux)))
             }
             val ev = if (lux.isNaN() || lux <= 0f) Float.NaN else log2(lux / 2.5f)
             StatGrid(
                 listOf(
-                    "Min" to formatLux(stats.min),
-                    "Średnio" to formatLux(stats.avg),
-                    "Maks" to formatLux(stats.max),
-                    "Stopoświeca" to fmt(lux / 10.764f, 1),
+                    stringResource(R.string.min) to formatLux(stats.min),
+                    stringResource(R.string.avg) to formatLux(stats.avg),
+                    stringResource(R.string.max) to formatLux(stats.max),
+                    stringResource(R.string.lux_fc) to fmt(lux / 10.764f, 1),
                     "EV (ISO 100)" to fmt(ev, 1),
-                    "Czas przy f/8" to shutter(ev),
+                    stringResource(R.string.lux_shutter) to shutter(ev),
                 ),
             )
             Spacer(Modifier.height(14.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Pill(if (hold) "Odblokuj" else "Zatrzymaj", icon = if (hold) Icons.Rounded.LockOpen else Icons.Rounded.Lock, active = hold) { hold = !hold }
-                Pill("Zeruj", icon = Icons.Rounded.RestartAlt) { stats.reset(); history.clear(); ticker.tick() }
+                Pill(stringResource(if (hold) R.string.release else R.string.hold), icon = if (hold) Icons.Rounded.LockOpen else Icons.Rounded.Lock, active = hold) { hold = !hold }
+                Pill(stringResource(R.string.reset), icon = Icons.Rounded.RestartAlt) { stats.reset(); history.clear(); ticker.tick() }
             }
         }
         Panel {
-            SectionLabel("Historia · skala logarytmiczna")
-            LineChart(listOf(Series(history, Color(0xFFFFD27A))), ticker, fill = true, minSpan = 1f, yLabel = { formatLux(Math.pow(10.0, it.toDouble()).toFloat()) + " lx" })
+            SectionLabel(stringResource(R.string.lux_history))
+            LineChart(listOf(Series(history, Palette.Fg)), ticker, fill = true, minSpan = 1f, yLabel = { formatLux(Math.pow(10.0, it.toDouble()).toFloat()) + " lx" })
         }
         Panel {
-            SectionLabel("Zalecane natężenie")
+            SectionLabel(stringResource(R.string.lux_guide))
             guide.forEach { (l, label) ->
                 val ok = !lux.isNaN() && lux >= l
                 Row(Modifier.height(30.dp)) {
-                    Text(label, color = if (ok) Color.White else Palette.TextFaint, fontSize = 14.sp, modifier = Modifier.weight(1f))
+                    Text(stringResource(label), color = if (ok) Palette.Fg else Palette.TextFaint, fontSize = 14.sp, modifier = Modifier.weight(1f))
                     Text("${formatLux(l)} lx", color = if (ok) Palette.Ok else Palette.TextFaint, fontSize = 14.sp)
                 }
             }
         }
+        Tip(stringResource(R.string.lux_tip))
     }
 }
 
