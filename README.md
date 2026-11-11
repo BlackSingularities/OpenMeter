@@ -4,6 +4,14 @@
 
 # OpenMeter
 
+<!-- posters:start -->
+<p align="center">
+  <img src="docs/posters/android.png" alt="OpenMeter – Android" width="460">
+</p>
+
+<p align="center"><a href="https://redzikowski.com/portfolio/openmeter">redzikowski.com/portfolio/openmeter</a></p>
+<!-- posters:end -->
+
 Mierniki i czujniki telefonu w jednym miejscu – czarno-biały interfejs (ciemny AMOLED albo jasny), bez reklam, open source. Po polsku i po angielsku.
 
 *Your phone's sensors as measuring instruments – black-and-white UI (AMOLED dark or light), no ads, open source. Available in English and Polish.*

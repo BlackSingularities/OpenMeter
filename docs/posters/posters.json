@@ -1,0 +1,23 @@
+{
+  "slug": "openmeter",
+  "name": "OpenMeter",
+  "label": "mierniki z czujników telefonu",
+  "icon": "icon.png",
+  "url": "https://redzikowski.com/portfolio/openmeter",
+  "posters": [
+    {
+      "platform": "android",
+      "file": "android.png",
+      "title": "Szesnaście przyrządów *w jednym telefonie*",
+      "lead": "Decybelomierz, luksomierz, poziomica, kompas, wykrywacz metalu i sejsmograf – z czujników, które telefon już ma.",
+      "shots": [
+        { "src": "../screenshots/android/01-mierniki.png", "caption": "Mierniki" },
+        { "src": "../screenshots/android/02-poziomica.png", "caption": "Poziomica" },
+        { "src": "../screenshots/android/03-kompas.png", "caption": "Kompas" },
+        { "src": "../screenshots/android/04-luksomierz.png", "caption": "Luksomierz" }
+      ],
+      "features": ["decybelomierz z widmem", "generator tonu", "kątomierz i poziomica", "wykrywacz metalu", "zapis pomiarów do CSV", "komfort jazdy ISO 2631"],
+      "meta": "Android 10 lub nowszy"
+    }
+  ]
+}
