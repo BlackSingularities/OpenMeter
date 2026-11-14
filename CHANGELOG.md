@@ -1,5 +1,9 @@
 # Zmiany
 
+## 2.0.1
+
+- Ikona aplikacji bez tła: na ekranie głównym widać sam kolorowy emblemat, spójnie z trybem „Bez tła” w OpenDesktop.
+
 ## 2.0.0
 
 Duża przebudowa: nowy wygląd, angielski, nowe mierniki i funkcje.
